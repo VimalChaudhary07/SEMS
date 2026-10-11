@@ -1,0 +1,26 @@
+[
+  {
+    "id": "identity-demo-socket-1",
+    "socketId": "SEMS-000001",
+    "claimCode": "105702",
+    "publicKey": "demo-public-key-0001",
+    "status": "claimed",
+    "createdAt": "2026-08-01T10:00:00+05:30"
+  },
+  {
+    "id": "identity-demo-socket-2",
+    "socketId": "SEMS-000002",
+    "claimCode": "731604",
+    "publicKey": "demo-public-key-0002",
+    "status": "claimed",
+    "createdAt": "2026-08-12T10:00:00+05:30"
+  },
+  {
+    "id": "identity-demo-socket-4",
+    "socketId": "SEMS-000004",
+    "claimCode": "482913",
+    "publicKey": "demo-public-key-0004",
+    "status": "unclaimed",
+    "createdAt": "2026-10-01T10:00:00+05:30"
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "owner",
+    "name": "Asha Verma",
+    "email": "owner@sems.app",
+    "role": "owner",
+    "verified": true
+  },
+  {
+    "id": "family",
+    "name": "Rohan Verma",
+    "email": "rohan@sems.app",
+    "role": "family",
+    "verified": true
+  }
+]

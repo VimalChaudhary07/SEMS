@@ -1,0 +1,8 @@
+[
+  {
+    "id": "drive-status",
+    "connected": false,
+    "state": "notConnected",
+    "pendingCount": 0
+  }
+]

@@ -1,0 +1,15 @@
+[
+  {
+    "id": "tariff-default",
+    "currency": "INR",
+    "slabs": [
+      {"fromKwh": 0, "toKwh": 100, "rate": 6.0},
+      {"fromKwh": 100, "toKwh": 200, "rate": 8.0},
+      {"fromKwh": 200, "toKwh": null, "rate": 9.5}
+    ],
+    "fixedCharge": 120,
+    "dutyPercent": 2,
+    "budget": 1900,
+    "billingDay": 1
+  }
+]

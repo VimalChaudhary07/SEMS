@@ -1,0 +1,37 @@
+[
+  {
+    "id": "heater",
+    "name": "Heater",
+    "socketId": "SEMS-000001",
+    "room": "Living room",
+    "status": "active",
+    "lifetimeKwh": 14.2,
+    "todayKwh": 3.1
+  },
+  {
+    "id": "fan",
+    "name": "Fan",
+    "socketId": "SEMS-000002",
+    "room": "Bedroom",
+    "status": "active",
+    "lifetimeKwh": 28.6,
+    "todayKwh": 0.6
+  },
+  {
+    "id": "refrigerator",
+    "name": "Refrigerator",
+    "socketId": "SEMS-000003",
+    "room": "Kitchen",
+    "status": "offline",
+    "lifetimeKwh": 74.1,
+    "todayKwh": 1.2
+  },
+  {
+    "id": "water-heater",
+    "name": "Water heater",
+    "room": "",
+    "status": "archived",
+    "lifetimeKwh": 35.8,
+    "todayKwh": 0
+  }
+]

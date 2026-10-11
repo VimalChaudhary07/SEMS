@@ -1,0 +1,30 @@
+[
+  {
+    "id": "sample-2026-10-11-001",
+    "device_id": "SEMS-000001",
+    "timestamp": "2026-10-11T19:42:00+05:30",
+    "sequence": 1,
+    "relay": true,
+    "voltage_v": 230.1,
+    "current_a": 9.56,
+    "power_w": 2200,
+    "energy_kwh": 150.0,
+    "frequency_hz": 50.0,
+    "power_factor": 1.0,
+    "quality": "good"
+  },
+  {
+    "id": "sample-2026-10-11-002",
+    "device_id": "SEMS-000002",
+    "timestamp": "2026-10-11T19:42:00+05:30",
+    "sequence": 1,
+    "relay": true,
+    "voltage_v": 230.1,
+    "current_a": 0.24,
+    "power_w": 55,
+    "energy_kwh": 80.9,
+    "frequency_hz": 50.0,
+    "power_factor": 0.99,
+    "quality": "good"
+  }
+]

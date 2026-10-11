@@ -1,0 +1,23 @@
+[
+  {
+    "id": "schedule-evening-heater",
+    "name": "Evening heater",
+    "applianceId": "heater",
+    "startTime": "18:00",
+    "endTime": "22:00",
+    "days": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+    "enabled": true,
+    "kind": "weekly"
+  },
+  {
+    "id": "schedule-night-fan",
+    "name": "Night fan",
+    "applianceId": "fan",
+    "startTime": "23:00",
+    "endTime": "06:00",
+    "days": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+    "enabled": true,
+    "kind": "weekly",
+    "overnight": true
+  }
+]

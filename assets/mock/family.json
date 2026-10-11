@@ -1,0 +1,10 @@
+[
+  {
+    "id": "family",
+    "name": "Rohan Verma",
+    "email": "rohan@sems.app",
+    "role": "family",
+    "status": "active",
+    "permissions": ["viewDashboard", "viewDevices", "controlSockets", "viewHistory", "viewAlerts"]
+  }
+]

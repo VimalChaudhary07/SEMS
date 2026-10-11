@@ -1,0 +1,11 @@
+[
+  {
+    "id": "preferences",
+    "themeMode": "system",
+    "notificationsEnabled": true,
+    "quietHoursEnabled": false,
+    "quietHoursStart": "22:00",
+    "quietHoursEnd": "07:00",
+    "telemetryRetentionDays": 90
+  }
+]

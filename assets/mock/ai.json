@@ -1,0 +1,18 @@
+[
+  {
+    "id": "insight-standby",
+    "title": "Reduce standby usage",
+    "description": "Turn off the television plug when you are away.",
+    "estimatedSavingInrPerMonth": 120,
+    "severity": "low",
+    "coverageDays": 45
+  },
+  {
+    "id": "insight-cooling",
+    "title": "Shift cooling hours",
+    "description": "Run cooling before the evening peak to reduce costs.",
+    "estimatedSavingInrPerMonth": 85,
+    "severity": "info",
+    "coverageDays": 45
+  }
+]

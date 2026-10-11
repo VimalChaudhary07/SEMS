@@ -1,0 +1,24 @@
+[ 
+  {
+    "id": "bill-2026-09",
+    "period": "Sep 2026",
+    "energyKwh": 232,
+    "amount": 1860,
+    "effectiveRate": 8.02,
+    "status": "billed"
+  },
+  {
+    "id": "bill-2026-08",
+    "period": "Aug 2026",
+    "energyKwh": 251,
+    "amount": 2043,
+    "status": "billed"
+  },
+  {
+    "id": "bill-2026-07",
+    "period": "Jul 2026",
+    "energyKwh": 214,
+    "amount": 1679,
+    "status": "billed"
+  }
+]

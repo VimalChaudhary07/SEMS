@@ -1,0 +1,17 @@
+[
+  {"id": "normal", "description": "Default owner home with connected devices."},
+  {"id": "socketOffline", "description": "Kitchen socket has stopped reporting."},
+  {"id": "safetyTrip", "description": "Living room socket is latched off by a safety trip."},
+  {"id": "learning2Days", "description": "Two days of energy history; insights remain in learning mode."},
+  {"id": "basic5Days", "description": "Five days of data with anomaly checks enabled."},
+  {"id": "good10Days", "description": "Ten days of data with a forecast and confidence band."},
+  {"id": "strong45Days", "description": "Forty-five days of history with monthly insights."},
+  {"id": "emptyNoSockets", "description": "No claimed sockets are available."},
+  {"id": "emptyNoAppliances", "description": "Sockets exist but no appliances are assigned."},
+  {"id": "driveNotConnected", "description": "Optional Drive backup is not connected."},
+  {"id": "driveFailed", "description": "The latest mock backup attempt failed."},
+  {"id": "commandFails", "description": "The next mock socket command fails."},
+  {"id": "commandExpires", "description": "The next mock socket command expires."},
+  {"id": "familyUser", "description": "Use the Family demo account."},
+  {"id": "ownerUser", "description": "Use the Owner demo account."}
+]

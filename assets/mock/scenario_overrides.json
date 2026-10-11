@@ -1,0 +1,27 @@
+{
+  "normal": {
+    "_meta": {"activeUser": {"id": "activeUser", "value": "owner"}}
+  },
+  "socketOffline": {
+    "sockets": {
+      "SEMS-000001": {"status": "offline", "relay": false, "powerW": 0, "lastSeenMinutes": 8}
+    }
+  },
+  "safetyTrip": {
+    "sockets": {
+      "SEMS-000001": {"status": "online", "relay": false, "powerW": 0, "safetyTrip": true, "tripReason": "Over-current detected", "tripSecondsRemaining": 45}
+    }
+  },
+  "learning2Days": {"history": {"history-summary-current": {"coverageDays": 2}}},
+  "basic5Days": {"history": {"history-summary-current": {"coverageDays": 5}}},
+  "good10Days": {"history": {"history-summary-current": {"coverageDays": 10}}},
+  "strong45Days": {"history": {"history-summary-current": {"coverageDays": 45}}},
+  "emptyNoSockets": {"sockets": {"SEMS-000001": null, "SEMS-000002": null, "SEMS-000003": null, "SEMS-000004": null}},
+  "emptyNoAppliances": {"appliances": {"heater": null, "fan": null, "refrigerator": null}},
+  "driveNotConnected": {"backup": {"drive-status": {"id": "drive-status", "connected": false, "state": "notConnected", "pendingCount": 0}}},
+  "driveFailed": {"backup": {"drive-status": {"id": "drive-status", "connected": true, "state": "failed", "pendingCount": 3, "error": "Mock upload failed"}}},
+  "commandFails": {"_meta": {"commandMode": {"id": "commandMode", "value": "failed"}}},
+  "commandExpires": {"_meta": {"commandMode": {"id": "commandMode", "value": "expired"}}},
+  "familyUser": {"_meta": {"activeUser": {"id": "activeUser", "value": "family"}}},
+  "ownerUser": {"_meta": {"activeUser": {"id": "activeUser", "value": "owner"}}}
+}

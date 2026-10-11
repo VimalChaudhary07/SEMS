@@ -1,0 +1,72 @@
+[
+  {
+    "id": "alert-overcurrent",
+    "title": "Over-current at SEMS-000001",
+    "message": "Current reached 16.4 A, above the 16 A safety limit. The socket switched the heater OFF to protect the wiring.",
+    "time": "Today 18:15",
+    "severity": "critical",
+    "category": "electrical",
+    "device": "Living room · Heater",
+    "acknowledged": false
+  },
+  {
+    "id": "alert-budget",
+    "title": "Monthly budget 80% used",
+    "message": "Estimated bill reached ₹1,500 of your ₹1,900 monthly budget with 11 days left.",
+    "time": "Today 15:40",
+    "severity": "warning",
+    "category": "energy",
+    "device": "All appliances",
+    "acknowledged": false
+  },
+  {
+    "id": "alert-offline",
+    "title": "SEMS-000003 is offline",
+    "message": "No telemetry for 14 minutes. The socket may have lost Wi-Fi. Local safety and schedules continue.",
+    "time": "Today 18:30",
+    "severity": "warning",
+    "category": "connectivity",
+    "device": "Kitchen · Refrigerator",
+    "acknowledged": false
+  },
+  {
+    "id": "alert-schedule",
+    "title": "Schedule \"Night fan\" executed",
+    "message": "Weekly schedule switched the fan OFF at 06:00 as planned.",
+    "time": "Today 13:40",
+    "severity": "info",
+    "category": "automation",
+    "device": "Bedroom · Fan",
+    "acknowledged": true
+  },
+  {
+    "id": "alert-ai-heater",
+    "title": "Heater usage is higher than usual",
+    "message": "Estimated usage is 18% above your recent pattern. This is an AI estimate, not a measured fault.",
+    "time": "Today 12:05",
+    "severity": "info",
+    "category": "ai",
+    "device": "Living room · Heater",
+    "acknowledged": false
+  },
+  {
+    "id": "alert-ai-fan",
+    "title": "Fan may be left running",
+    "message": "The fan has been on longer than its usual weekday pattern.",
+    "time": "Yesterday 21:10",
+    "severity": "info",
+    "category": "ai",
+    "device": "Bedroom · Fan",
+    "acknowledged": false
+  },
+  {
+    "id": "alert-ai-estimate",
+    "title": "Monthly use estimate updated",
+    "message": "Your estimated monthly energy use is based on available local readings.",
+    "time": "Yesterday 18:00",
+    "severity": "info",
+    "category": "ai",
+    "device": "All appliances",
+    "acknowledged": false
+  }
+]
