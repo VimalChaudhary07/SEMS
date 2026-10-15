@@ -2,6 +2,8 @@ import '../models/sems_models.dart';
 import '../../domain/services/qr_claim_validator.dart';
 import '../../domain/models/command_progress.dart';
 import '../../domain/models/schedule_record.dart';
+import '../../domain/models/bill_record.dart';
+import '../../domain/models/tariff_record.dart';
 
 class SchedulePauseState {
   const SchedulePauseState({required this.paused, this.until});
@@ -65,6 +67,10 @@ abstract interface class SemsRepository {
   Future<void> acknowledgeAlert(String id);
   Future<AlertPreferences> getAlertPreferences();
   Future<void> saveAlertPreferences(AlertPreferences preferences);
+  List<BillRecord> get bills;
+  TariffRecord get tariff;
+  Future<void> saveBill(BillRecord bill);
+  Future<void> saveTariff(TariffRecord tariff);
 }
 
 class AlertPreferences {
@@ -183,6 +189,53 @@ class MockSemsRepository implements SemsRepository {
         ];
   SchedulePauseState _schedulePause = const SchedulePauseState(paused: false);
   final List<SemsAppliance> _appliances;
+  final List<BillRecord> _bills = [
+    const BillRecord(
+      id: 'bill-sep-2026',
+      period: 'Sep 2026',
+      energyKwh: 232,
+      amount: 1860,
+      effectiveRate: 8.02,
+    ),
+    const BillRecord(
+      id: 'bill-aug-2026',
+      period: 'Aug 2026',
+      energyKwh: 251,
+      amount: 2043,
+      effectiveRate: 8.14,
+    ),
+    const BillRecord(
+      id: 'bill-jul-2026',
+      period: 'Jul 2026',
+      energyKwh: 214,
+      amount: 1679,
+      effectiveRate: 7.85,
+    ),
+  ];
+  TariffRecord _tariff = const TariffRecord(
+    id: 'tariff-current',
+    slabs: [
+      TariffSlabRecord(fromKwh: 0, toKwh: 100, rate: 6),
+      TariffSlabRecord(fromKwh: 100, toKwh: 200, rate: 8),
+      TariffSlabRecord(fromKwh: 200, rate: 9.5),
+    ],
+    fixedCharge: 120,
+    dutyPercent: 2,
+    budget: 1900,
+    billingDay: 1,
+  );
+
+  @override
+  List<BillRecord> get bills => List.unmodifiable(_bills);
+
+  @override
+  TariffRecord get tariff => _tariff;
+
+  @override
+  Future<void> saveBill(BillRecord bill) async => _bills.insert(0, bill);
+
+  @override
+  Future<void> saveTariff(TariffRecord value) async => _tariff = value;
 
   static List<SemsAppliance> _initialAppliances(bool empty) => empty
       ? <SemsAppliance>[]

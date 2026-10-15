@@ -5,6 +5,8 @@ import '../../domain/models/json_record.dart';
 import '../../domain/models/command_progress.dart';
 import '../../domain/models/socket_device.dart';
 import '../../domain/models/schedule_record.dart';
+import '../../domain/models/bill_record.dart';
+import '../../domain/models/tariff_record.dart';
 import '../../domain/services/qr_claim_service.dart';
 import '../../domain/services/qr_claim_validator.dart';
 import '../../data/simulators/command_simulator.dart';
@@ -26,6 +28,8 @@ class DriftSemsRepository implements SemsRepository {
     required this._monthlyReadings,
     required this._alerts,
     required this._recommendations,
+    required this._bills,
+    required this._tariff,
     required this.coverageDays,
     required this._pendingClaimCode,
     required this._idGenerator,
@@ -49,6 +53,10 @@ class DriftSemsRepository implements SemsRepository {
     final sessions = await repositories.sessions.getAll();
     final alertRecords = await repositories.alerts.getAll();
     final insightRecords = await repositories.ai.getAll();
+    final billRecords = await repositories.bills.getAll();
+    final tariffRecord = await repositories.tariffsData.getById(
+      'tariff-current',
+    );
     final latestTelemetry = <String, JsonRecord>{};
     for (final sample in history) {
       final deviceId = sample.data['device_id'];
@@ -145,6 +153,21 @@ class DriftSemsRepository implements SemsRepository {
       recommendations: insightRecords
           .map(_mapRecommendation)
           .toList(growable: false),
+      bills: billRecords,
+      tariff:
+          tariffRecord ??
+          const TariffRecord(
+            id: 'tariff-current',
+            slabs: [
+              TariffSlabRecord(fromKwh: 0, toKwh: 100, rate: 6),
+              TariffSlabRecord(fromKwh: 100, toKwh: 200, rate: 8),
+              TariffSlabRecord(fromKwh: 200, rate: 9.5),
+            ],
+            fixedCharge: 120,
+            dutyPercent: 2,
+            budget: 1900,
+            billingDay: 1,
+          ),
       coverageDays: _number(historySummary?.data['coverageDays']).round(),
       pendingClaimCode: _firstClaimCode(sockets),
       idGenerator: idGenerator,
@@ -163,6 +186,8 @@ class DriftSemsRepository implements SemsRepository {
   final List<EnergyReading> _monthlyReadings;
   final List<SemsAlert> _alerts;
   final List<EnergyRecommendation> _recommendations;
+  final List<BillRecord> _bills;
+  TariffRecord _tariff;
   final IdGenerator _idGenerator;
   final Clock _clock;
   String? _pendingClaimCode;
@@ -205,6 +230,24 @@ class DriftSemsRepository implements SemsRepository {
   @override
   List<EnergyRecommendation> get recommendations =>
       List.unmodifiable(_recommendations);
+
+  @override
+  List<BillRecord> get bills => List.unmodifiable(_bills);
+
+  @override
+  TariffRecord get tariff => _tariff;
+
+  @override
+  Future<void> saveBill(BillRecord bill) async {
+    await _repositories.bills.put(bill, id: bill.id);
+    _bills.insert(0, bill);
+  }
+
+  @override
+  Future<void> saveTariff(TariffRecord value) async {
+    await _repositories.tariffsData.put(value, id: value.id);
+    _tariff = value;
+  }
 
   @override
   Future<void> setDeviceState(String id, bool isOn) async {

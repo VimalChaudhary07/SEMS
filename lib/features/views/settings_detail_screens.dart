@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/session/demo_session.dart';
+import '../../data/repositories/sems_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/sems_widgets.dart';
 import 'more_screens.dart';
@@ -431,7 +432,12 @@ class _RoleRow extends StatelessWidget {
 }
 
 class TariffSettingsScreen extends StatefulWidget {
-  const TariffSettingsScreen({super.key, this.readOnly = false});
+  const TariffSettingsScreen({
+    super.key,
+    this.repository,
+    this.readOnly = false,
+  });
+  final SemsRepository? repository;
   final bool readOnly;
   @override
   State<TariffSettingsScreen> createState() => _TariffSettingsScreenState();
@@ -595,7 +601,9 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
         OutlinedButton.icon(
           onPressed: () => Navigator.push(
             context,
-            MaterialPageRoute<void>(builder: (_) => const BillRecordsScreen()),
+            MaterialPageRoute<void>(
+              builder: (_) => BillRecordsScreen(repository: widget.repository),
+            ),
           ),
           icon: const Icon(Icons.receipt_long_outlined),
           label: const Text('View bill records'),

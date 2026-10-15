@@ -228,7 +228,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         value: '₹1,292',
                         unit: 'Est.',
                         note: 'Estimated',
-                        onTap: () => _go(context, const BillsScreen()),
+                        onTap: () => _go(
+                          context,
+                          BillsScreen(repository: widget.repository),
+                        ),
                       ),
                     ),
                   ],

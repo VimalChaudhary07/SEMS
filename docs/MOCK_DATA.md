@@ -66,6 +66,9 @@ the seeded records remain separate from estimates.
   monthly forecast (30–59), and pattern (60+) gates. Every analysis is marked
   estimated.
 - `estimateBill` applies progressive tariff slabs, fixed charge, then duty.
+- `BillsScreen` and `BillRecordsScreen` read the `bills` and `tariffs` collections
+  through `SemsRepository`; edited tariff settings and added bill records persist
+  in local Drift storage only.
 - `validateScheduleWindows` checks time/day validity and overlapping intervals,
   including overnight windows crossing to the next day.
 - Scheduling UI saves typed `ScheduleRecord` values to the local Drift

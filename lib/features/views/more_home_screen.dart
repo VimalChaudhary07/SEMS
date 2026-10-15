@@ -92,7 +92,10 @@ class MoreScreen extends StatelessWidget {
                 subtitle: 'Bills, budget, estimates',
                 onTap: () => _push(
                   context,
-                  TariffSettingsScreen(readOnly: DemoSession.isMember),
+                  TariffSettingsScreen(
+                    repository: repository,
+                    readOnly: DemoSession.isMember,
+                  ),
                 ),
               ),
               _MoreTile(

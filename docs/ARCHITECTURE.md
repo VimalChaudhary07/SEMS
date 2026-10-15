@@ -98,8 +98,11 @@ data-driven. Screen-by-screen design parity is not signed off; these limits
 are tracked in `SCREEN_MAP.md`. Phase 5 verification passes `flutter analyze
 --no-pub` and all 109 Flutter tests.
 
-The auth flow, account/demo actions, developer tool, sample bills, alerts,
-settings values, and schedule examples include literals in Dart. Most
+The auth flow, account/demo actions, developer tool, alerts, settings values,
+and schedule examples include literals in Dart. Billing records and tariff
+settings are seeded from JSON and exposed through typed local Drift
+repositories; bill estimates are calculated locally from the persisted slabs.
+Most
 service-dependent actions are explicitly local previews; no server/backend
 integration is part of the current implementation or this project scope.
 

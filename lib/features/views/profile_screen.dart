@@ -86,7 +86,9 @@ class ProfileScreen extends StatelessWidget {
           subtitle: 'Monthly cost breakdown',
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute<void>(builder: (_) => const BillsScreen()),
+            MaterialPageRoute<void>(
+              builder: (_) => BillsScreen(repository: repository),
+            ),
           ),
         ),
         _MenuItem(
