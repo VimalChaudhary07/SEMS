@@ -40,9 +40,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 16),
-          child: Center(
-            child: _RoleBadge(label: DemoSession.isMember ? 'Family' : 'Owner'),
-          ),
+          child: Center(child: RoleBadge(isFamily: DemoSession.isMember)),
         ),
       ],
     ),
@@ -253,11 +251,15 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: SemsColors.mint,
+                color: ComponentTheme.colors(context).brandTint,
                 borderRadius: BorderRadius.circular(9),
               ),
               alignment: Alignment.center,
-              child: Icon(_applianceIcon, color: SemsColors.forest, size: 20),
+              child: Icon(
+                _applianceIcon,
+                color: ComponentTheme.colors(context).brandPrimary,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -299,37 +301,34 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
         const SizedBox(height: 6),
         Row(
           children: [
-            _StatusBadge(
+            StatusBadge(
               icon: device.online ? Icons.wifi_rounded : Icons.wifi_off_rounded,
-              text: device.online ? 'Online' : 'Offline',
-              enabled: device.online,
+              label: device.online ? 'Online' : 'Offline',
+              tone: device.online ? StatusTone.ok : StatusTone.off,
             ),
             const SizedBox(width: 6),
             if (device.online)
-              _StatusBadge(
+              StatusBadge(
                 icon: Icons.power_settings_new_rounded,
-                text: device.isOn ? 'ON' : 'OFF',
-                enabled: device.isOn,
+                label: device.isOn ? 'ON' : 'OFF',
+                tone: device.isOn ? StatusTone.ok : StatusTone.mute,
               ),
             if (device.safetyTrip) ...[
               const SizedBox(width: 6),
-              const _StatusBadge(
+              const StatusBadge(
                 icon: Icons.shield_outlined,
-                text: 'Safety trip',
-                enabled: false,
+                label: 'Safety trip',
+                tone: StatusTone.fault,
               ),
             ],
           ],
         ),
         const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          height: 38,
-          child: FilledButton.icon(
-            onPressed: device.online ? _openControl : null,
-            icon: const Icon(Icons.power_settings_new_rounded, size: 16),
-            label: const Text('Remote control'),
-          ),
+        AppButton(
+          label: 'Remote control',
+          leadingIcon: Icons.power_settings_new_rounded,
+          size: AppButtonSize.small,
+          onPressed: device.online ? _openControl : null,
         ),
       ],
     ),
@@ -337,40 +336,13 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
 
   Widget _stateBanner() {
     final isTrip = device.safetyTrip;
-    final color = isTrip ? SemsColors.red : SemsColors.muted;
-    return AppCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            isTrip ? Icons.shield_outlined : Icons.wifi_off_rounded,
-            color: color,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isTrip ? 'Safety protection active' : 'Socket is offline',
-                  style: TextStyle(color: color, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  isTrip
-                      ? '${device.tripReason ?? 'The socket is paused for safety.'}${device.tripSecondsRemaining == null ? '' : ' Retry in ${device.tripSecondsRemaining} s.'}'
-                      : 'Last seen $_lastSeenLabel. Local safety limits and schedules continue on the socket.',
-                  style: const TextStyle(
-                    color: SemsColors.muted,
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return AppBanner(
+      tone: isTrip ? StatusTone.fault : StatusTone.off,
+      icon: isTrip ? Icons.shield_outlined : Icons.wifi_off_rounded,
+      title: isTrip ? 'Safety protection active' : 'Socket is offline',
+      body: isTrip
+          ? '${device.tripReason ?? 'The socket is paused for safety.'}${device.tripSecondsRemaining == null ? '' : ' Retry in ${device.tripSecondsRemaining} s.'}'
+          : 'Last seen $_lastSeenLabel. Local safety limits and schedules continue on the socket.',
     );
   }
 
@@ -552,10 +524,11 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: SemsColors.red),
+          AppButton(
+            fullWidth: false,
+            variant: AppButtonVariant.danger,
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remove device'),
+            label: 'Remove device',
           ),
         ],
       ),
@@ -612,12 +585,12 @@ class _RenameSocketSheetState extends State<_RenameSocketSheet> {
                 decoration: const InputDecoration(labelText: 'Name'),
               ),
               const SizedBox(height: 14),
-              FilledButton(
+              AppButton(
+                label: 'Save name',
                 onPressed: () {
                   final value = controller.text.trim();
                   if (value.isNotEmpty) Navigator.pop(context, value);
                 },
-                child: const Text('Save name'),
               ),
             ],
           ),
@@ -683,13 +656,13 @@ class _ChangeWifiSheetState extends State<_ChangeWifiSheet> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                FilledButton(
+                AppButton(
+                  label: 'Continue',
                   onPressed: () {
                     if (form.currentState!.validate()) {
                       Navigator.pop(context, true);
                     }
                   },
-                  child: const Text('Continue'),
                 ),
               ],
             ),
@@ -737,11 +710,12 @@ class _TransferOwnershipDialogState extends State<_TransferOwnershipDialog> {
         onPressed: () => Navigator.pop(context, false),
         child: const Text('Cancel'),
       ),
-      FilledButton(
+      AppButton(
+        fullWidth: false,
+        label: 'Transfer',
         onPressed: () {
           if (form.currentState!.validate()) Navigator.pop(context, true);
         },
-        child: const Text('Transfer'),
       ),
     ],
   );
@@ -896,99 +870,42 @@ class _ManageRow extends StatelessWidget {
   final bool destructive;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    dense: true,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 0),
-    leading: Container(
-      width: 30,
-      height: 30,
-      decoration: BoxDecoration(
-        color: destructive ? const Color(0xFFFBE6E6) : SemsColors.mint,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Icon(
-        icon,
-        size: 16,
-        color: destructive ? SemsColors.red : SemsColors.forest,
-      ),
-    ),
-    title: Text(
-      title,
-      style: TextStyle(
-        color: destructive ? SemsColors.red : SemsColors.ink,
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-      ),
-    ),
-    subtitle: subtitle == null
-        ? null
-        : Text(
-            subtitle!,
-            style: const TextStyle(fontSize: 9, color: SemsColors.muted),
-          ),
-    trailing: const Icon(Icons.chevron_right_rounded, size: 18),
-    onTap: onTap,
-  );
-}
-
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({
-    required this.icon,
-    required this.text,
-    required this.enabled,
-  });
-
-  final IconData icon;
-  final String text;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-    decoration: BoxDecoration(
-      color: enabled ? SemsColors.mint : const Color(0xFFECEFEE),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return ListTile(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 0),
+      leading: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: destructive
+              ? ComponentTheme.tint(context, 'fault')
+              : colors.brandTint,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(
           icon,
-          size: 11,
-          color: enabled ? SemsColors.forest : SemsColors.muted,
+          size: 16,
+          color: destructive ? colors.statusFault : colors.brandPrimary,
         ),
-        const SizedBox(width: 3),
-        Text(
-          text,
-          style: TextStyle(
-            color: enabled ? SemsColors.forest : SemsColors.muted,
-            fontSize: 9,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _RoleBadge extends StatelessWidget {
-  const _RoleBadge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-    decoration: BoxDecoration(
-      color: DemoSession.isMember ? const Color(0xFFE6EDFF) : SemsColors.mint,
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Text(
-      label,
-      style: const TextStyle(
-        color: SemsColors.forest,
-        fontWeight: FontWeight.w600,
-        fontSize: 11,
       ),
-    ),
-  );
+      title: Text(
+        title,
+        style: TextStyle(
+          color: destructive ? colors.statusFault : colors.textPrimary,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: subtitle == null
+          ? null
+          : Text(
+              subtitle!,
+              style: const TextStyle(fontSize: 9, color: SemsColors.muted),
+            ),
+      trailing: const Icon(Icons.chevron_right_rounded, size: 18),
+      onTap: onTap,
+    );
+  }
 }

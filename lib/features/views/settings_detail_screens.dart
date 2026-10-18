@@ -35,11 +35,11 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           subtitle: 'Update the local demo profile',
         ),
         const SizedBox(height: 18),
-        const Center(
+        Center(
           child: CircleAvatar(
             radius: 42,
-            backgroundColor: SemsColors.forest,
-            child: Text(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: const Text(
               'AV',
               style: TextStyle(
                 color: Colors.white,
@@ -61,7 +61,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           decoration: const InputDecoration(labelText: 'Email'),
         ),
         const SizedBox(height: 20),
-        FilledButton(
+        AppButton(
+          label: 'Save changes',
           onPressed: () {
             if (name.text.trim().isEmpty || !email.text.contains('@')) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -73,14 +74,11 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               const SnackBar(content: Text('Profile saved for this session.')),
             );
           },
-          child: const Text('Save changes'),
         ),
         const SizedBox(height: 16),
-        const AppCard(
-          child: Text(
-            'Password changes and account verification are not connected to an identity service.',
-            style: TextStyle(color: SemsColors.muted, fontSize: 12),
-          ),
+        const AppBanner(
+          tone: StatusTone.brand,
+          title: 'Password changes and account verification are not connected to an identity service.',
         ),
       ],
     ),
@@ -175,11 +173,9 @@ class _NotificationSettingsScreenState
           ),
         ),
         const SizedBox(height: 14),
-        const AppCard(
-          child: Text(
-            'Notification preferences are local demo state only. No push notification service is active.',
-            style: TextStyle(color: SemsColors.muted, fontSize: 12),
-          ),
+        const AppBanner(
+          tone: StatusTone.brand,
+          title: 'Notification preferences are local demo state only. No push notification service is active.',
         ),
       ],
     ),
@@ -244,10 +240,13 @@ class _FamilySettingsScreenState extends State<FamilySettingsScreen> {
           AppCard(
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: SemsColors.mint,
+                backgroundColor: ComponentTheme.colors(context).brandTint,
                 child: Text(
                   members[i].$1.substring(0, 1),
-                  style: const TextStyle(color: SemsColors.forest),
+                  style: TextStyle(
+                    color: ComponentTheme.colors(context).brandPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               title: Text(
@@ -256,32 +255,31 @@ class _FamilySettingsScreenState extends State<FamilySettingsScreen> {
               ),
               subtitle: Text(members[i].$2),
               trailing: i == 0
-                  ? const Icon(
-                      Icons.verified_user_outlined,
-                      color: SemsColors.forest,
-                    )
-                  : DemoSession.isMember
-                  ? const Text(
-                      'View only',
-                      style: TextStyle(color: SemsColors.muted, fontSize: 10),
-                    )
-                  : PopupMenuButton<String>(
-                      onSelected: (v) {
-                        if (v == 'remove') {
-                          _remove(i);
-                        } else {
-                          _role(i);
-                        }
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(
-                          value: 'role',
-                          child: Text('Change role'),
-                        ),
-                        PopupMenuItem(
-                          value: 'remove',
-                          child: Text('Remove member'),
-                        ),
+                  ? const RoleBadge(isFamily: false)
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RoleBadge(isFamily: members[i].$2 == 'Member'),
+                        if (!DemoSession.isMember)
+                          PopupMenuButton<String>(
+                            onSelected: (v) {
+                              if (v == 'remove') {
+                                _remove(i);
+                              } else {
+                                _role(i);
+                              }
+                            },
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(
+                                value: 'role',
+                                child: Text('Change role'),
+                              ),
+                              PopupMenuItem(
+                                value: 'remove',
+                                child: Text('Remove member'),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
             ),
@@ -347,13 +345,13 @@ class _FamilySettingsScreenState extends State<FamilySettingsScreen> {
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
-            FilledButton(
+            AppButton(
+              label: 'Invite',
               onPressed: () {
                 if (form.currentState!.validate()) {
                   Navigator.pop(context, (email.text.trim(), role));
                 }
               },
-              child: const Text('Invite'),
             ),
           ],
         ),
@@ -395,9 +393,10 @@ class _FamilySettingsScreenState extends State<FamilySettingsScreen> {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          AppButton(
+            label: 'Remove',
+            variant: AppButtonVariant.danger,
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remove'),
           ),
         ],
       ),
@@ -479,7 +478,9 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
       ),
     );
     final mainBill = _bills.isNotEmpty ? _bills.first : null;
-    final value = mainBill == null ? '₹0' : '₹${mainBill.amount.toStringAsFixed(0)}';
+    final value = mainBill == null
+        ? '₹0'
+        : '₹${mainBill.amount.toStringAsFixed(0)}';
     final diff = mainBill == null ? 0.0 : estimate.total - mainBill.amount;
 
     return Scaffold(
@@ -537,11 +538,7 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
-                const LinearProgressIndicator(
-                  value: 0.68,
-                  minHeight: 8,
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
-                ),
+                const AppProgressBar(value: 0.68, height: 8),
                 const SizedBox(height: 5),
                 const Text(
                   '68% of budget used (Estimated). Budget alerts come at 80% and 100%.',
@@ -556,9 +553,9 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: SemsColors.mint,
+              color: ComponentTheme.colors(context).brandTint,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: SemsColors.line),
+              border: Border.all(color: ComponentTheme.colors(context).border),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -586,18 +583,18 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
           AppCard(
             child: Column(
               children: [
-                _BillingRow(
-                  label: 'Estimated for 232 kWh',
-                  value: '₹1,861',
-                ),
+                _BillingRow(label: 'Estimated for 232 kWh', value: '₹1,861'),
                 _BillingRow(
                   label: 'Billed amount',
-                  value: mainBill == null ? '₹0' : '₹${mainBill.amount.toStringAsFixed(0)}',
+                  value: mainBill == null
+                      ? '₹0'
+                      : '₹${mainBill.amount.toStringAsFixed(0)}',
                 ),
                 const Divider(height: 12),
                 _BillingRow(
                   label: 'Estimated vs Billed',
-                  value: '${diff >= 0 ? '+' : ''}₹${diff.abs().toStringAsFixed(0)}',
+                  value:
+                      '${diff >= 0 ? '+' : ''}₹${diff.abs().toStringAsFixed(0)}',
                   bold: true,
                   valueColor: diff >= 0 ? SemsColors.green : SemsColors.red,
                 ),
@@ -608,10 +605,7 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
           Row(
             children: [
               const Expanded(child: _SectionLabel('Bill records')),
-              TextButton(
-                onPressed: _addBill,
-                child: const Text('Add bill'),
-              ),
+              TextButton(onPressed: _addBill, child: const Text('Add bill')),
             ],
           ),
           const SizedBox(height: 2),
@@ -621,20 +615,23 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
               children: [
                 for (var i = 0; i < _bills.length; i++) ...[
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     child: Row(
                       children: [
                         Container(
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: SemsColors.mint,
+                            color: ComponentTheme.colors(context).brandTint,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.receipt_long_outlined,
                             size: 19,
-                            color: SemsColors.forest,
+                            color: ComponentTheme.colors(context).brandPrimary,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -670,22 +667,10 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: SemsColors.mint,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: const Text(
-                                'Billed',
-                                style: TextStyle(
-                                  color: SemsColors.muted,
-                                  fontSize: 11,
-                                ),
-                              ),
+                            const StatusBadge(
+                              label: 'Billed',
+                              tone: StatusTone.brand,
+                              compact: true,
                             ),
                           ],
                         ),
@@ -716,10 +701,11 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          OutlinedButton.icon(
+          AppButton(
+            label: 'Edit billing settings',
+            leadingIcon: Icons.edit_outlined,
+            variant: AppButtonVariant.secondary,
             onPressed: _editBillingSettings,
-            icon: const Icon(Icons.edit_outlined),
-            label: const Text('Edit billing settings'),
           ),
         ],
       ),
@@ -727,17 +713,29 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
   }
 
   Future<void> _editBillingSettings() async {
-    final budget = TextEditingController(text: _tariff.budget.toStringAsFixed(0));
-    final fixed = TextEditingController(text: _tariff.fixedCharge.toStringAsFixed(0));
-    final duty = TextEditingController(text: _tariff.dutyPercent.toStringAsFixed(0));
+    final budget = TextEditingController(
+      text: _tariff.budget.toStringAsFixed(0),
+    );
+    final fixed = TextEditingController(
+      text: _tariff.fixedCharge.toStringAsFixed(0),
+    );
+    final duty = TextEditingController(
+      text: _tariff.dutyPercent.toStringAsFixed(0),
+    );
     final first = TextEditingController(
-      text: _tariff.slabs.isNotEmpty ? _tariff.slabs[0].rate.toStringAsFixed(2) : '6.00',
+      text: _tariff.slabs.isNotEmpty
+          ? _tariff.slabs[0].rate.toStringAsFixed(2)
+          : '6.00',
     );
     final second = TextEditingController(
-      text: _tariff.slabs.length > 1 ? _tariff.slabs[1].rate.toStringAsFixed(2) : '8.00',
+      text: _tariff.slabs.length > 1
+          ? _tariff.slabs[1].rate.toStringAsFixed(2)
+          : '8.00',
     );
     final third = TextEditingController(
-      text: _tariff.slabs.length > 2 ? _tariff.slabs[2].rate.toStringAsFixed(2) : '9.50',
+      text: _tariff.slabs.length > 2
+          ? _tariff.slabs[2].rate.toStringAsFixed(2)
+          : '9.50',
     );
     final form = GlobalKey<FormState>();
     final updated = await showModalBottomSheet<TariffRecord>(
@@ -805,8 +803,13 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: first,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(labelText: '0–100 kWh', prefixText: '₹ '),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: '0–100 kWh',
+                          prefixText: '₹ ',
+                        ),
                         validator: _zeroOrPositive,
                       ),
                     ),
@@ -814,8 +817,13 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: second,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(labelText: '100–200 kWh', prefixText: '₹ '),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: '100–200 kWh',
+                          prefixText: '₹ ',
+                        ),
                         validator: _zeroOrPositive,
                       ),
                     ),
@@ -823,12 +831,18 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
                 ),
                 TextFormField(
                   controller: third,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Above 200 kWh', prefixText: '₹ '),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Above 200 kWh',
+                    prefixText: '₹ ',
+                  ),
                   validator: _zeroOrPositive,
                 ),
                 const SizedBox(height: 12),
-                FilledButton(
+                AppButton(
+                  label: 'Save billing settings',
                   onPressed: () {
                     if (!form.currentState!.validate()) return;
                     Navigator.pop(
@@ -856,10 +870,6 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
                       ),
                     );
                   },
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  child: const Text('Save billing settings'),
                 ),
               ],
             ),
@@ -939,7 +949,8 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
                 validator: _positive,
               ),
               const SizedBox(height: 12),
-              FilledButton(
+              AppButton(
+                label: 'Save bill',
                 onPressed: () {
                   if (!form.currentState!.validate()) return;
                   Navigator.pop(
@@ -949,15 +960,12 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
                       period: period.text.trim(),
                       energyKwh: double.parse(energy.text),
                       amount: double.parse(amount.text),
-                      effectiveRate: double.parse(amount.text) / double.parse(energy.text),
+                      effectiveRate:
+                          double.parse(amount.text) / double.parse(energy.text),
                       status: 'billed',
                     ),
                   );
                 },
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                ),
-                child: const Text('Save bill'),
               ),
             ],
           ),
@@ -978,7 +986,9 @@ class _TariffSettingsScreenState extends State<TariffSettingsScreen> {
       value == null || value.trim().isEmpty ? 'Required' : null;
 
   static String? _positive(String? value) =>
-      (double.tryParse(value ?? '') ?? 0) <= 0 ? 'Enter a value greater than zero' : null;
+      (double.tryParse(value ?? '') ?? 0) <= 0
+      ? 'Enter a value greater than zero'
+      : null;
 
   static String? _zeroOrPositive(String? value) =>
       (double.tryParse(value ?? '') ?? -1) < 0 ? 'Enter zero or more' : null;
@@ -1007,19 +1017,26 @@ class _BillingLegend extends StatelessWidget {
   const _BillingLegend();
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: const [
-      _LegendPill(label: 'Measured', color: Colors.white),
-      SizedBox(width: 12),
-      _LegendPill(label: 'Estimated', color: Colors.white, dashed: true),
-      SizedBox(width: 12),
-      _LegendPill(label: 'Billed', color: SemsColors.mint),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return Row(
+      children: [
+        _LegendPill(label: 'Measured', color: colors.card),
+        const SizedBox(width: 12),
+        _LegendPill(label: 'Estimated', color: colors.card, dashed: true),
+        const SizedBox(width: 12),
+        _LegendPill(label: 'Billed', color: colors.brandTint),
+      ],
+    );
+  }
 }
 
 class _LegendPill extends StatelessWidget {
-  const _LegendPill({required this.label, required this.color, this.dashed = false});
+  const _LegendPill({
+    required this.label,
+    required this.color,
+    this.dashed = false,
+  });
   final String label;
   final Color color;
   final bool dashed;
@@ -1061,44 +1078,51 @@ class _MetricCard extends StatelessWidget {
   final bool estimated;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      border: Border.all(color: SemsColors.line),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            if (estimated)
-              const Padding(
-                padding: EdgeInsets.only(right: 4),
-                child: Icon(Icons.auto_awesome_outlined, size: 12, color: SemsColors.muted),
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.card,
+        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (estimated)
+                const Padding(
+                  padding: EdgeInsets.only(right: 4),
+                  child: Icon(
+                    Icons.auto_awesome_outlined,
+                    size: 12,
+                    color: SemsColors.muted,
+                  ),
+                ),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(color: SemsColors.muted, fontSize: 12),
+                ),
               ),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(color: SemsColors.muted, fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          note,
-          style: const TextStyle(color: SemsColors.muted, fontSize: 11),
-        ),
-      ],
-    ),
-  );
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            note,
+            style: const TextStyle(color: SemsColors.muted, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _BillingRow extends StatelessWidget {
@@ -1114,29 +1138,32 @@ class _BillingRow extends StatelessWidget {
   final Color? valueColor;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 6),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: bold ? SemsColors.ink : SemsColors.muted,
-              fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: bold ? colors.textPrimary : SemsColors.muted,
+                fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+              ),
             ),
           ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
-            color: valueColor ?? SemsColors.ink,
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+              color: valueColor ?? colors.textPrimary,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class AiSettingsScreen extends StatefulWidget {
@@ -1158,15 +1185,9 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
           subtitle: 'Local sample preference controls',
         ),
         const SizedBox(height: 14),
-        const AppCard(
-          child: Text(
-            'The design describes on-device analysis. This preview uses static sample recommendations and does not run an AI model.',
-            style: TextStyle(
-              color: SemsColors.muted,
-              fontSize: 12,
-              height: 1.4,
-            ),
-          ),
+        const AppBanner(
+          tone: StatusTone.ai,
+          title: 'The design describes on-device analysis. This preview uses static sample recommendations and does not run an AI model.',
         ),
         const SizedBox(height: 12),
         AppCard(
@@ -1230,7 +1251,7 @@ class _StorageSettingsScreenState extends State<StorageSettingsScreen> {
                 ],
               ),
               const SizedBox(height: 10),
-              const LinearProgressIndicator(value: .28, minHeight: 6),
+              const AppProgressBar(value: .28, height: 6),
               const SizedBox(height: 8),
               const Text(
                 'Energy history 1.1 GB · app data 0.3 GB',
@@ -1256,7 +1277,10 @@ class _StorageSettingsScreenState extends State<StorageSettingsScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        OutlinedButton.icon(
+        AppButton(
+          label: 'Clear local data',
+          leadingIcon: Icons.delete_outline,
+          variant: AppButtonVariant.danger,
           onPressed: () {
             showDialog<void>(
               context: context,
@@ -1274,15 +1298,11 @@ class _StorageSettingsScreenState extends State<StorageSettingsScreen> {
               ),
             );
           },
-          icon: const Icon(Icons.delete_outline),
-          label: const Text('Clear local data'),
         ),
         const SizedBox(height: 8),
-        const AppCard(
-          child: Text(
-            'Storage figures and history controls are illustrative. The preview does not write energy telemetry to disk.',
-            style: TextStyle(color: SemsColors.muted, fontSize: 12),
-          ),
+        const AppBanner(
+          tone: StatusTone.brand,
+          title: 'Storage figures and history controls are illustrative. The preview does not write energy telemetry to disk.',
         ),
       ],
     ),
@@ -1323,29 +1343,29 @@ class PrivacySettingsScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
-        FilledButton.icon(
+        AppButton(
+          label: 'Export data as CSV',
+          leadingIcon: Icons.download_outlined,
           onPressed: () => _export(context, 'CSV'),
-          icon: const Icon(Icons.download_outlined),
-          label: const Text('Export data as CSV'),
         ),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
+        AppButton(
+          label: 'Export data as JSON',
+          leadingIcon: Icons.data_object_outlined,
+          variant: AppButtonVariant.secondary,
           onPressed: () => _export(context, 'JSON'),
-          icon: const Icon(Icons.data_object_outlined),
-          label: const Text('Export data as JSON'),
         ),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
+        AppButton(
+          label: 'Export data as PDF',
+          leadingIcon: Icons.picture_as_pdf_outlined,
+          variant: AppButtonVariant.secondary,
           onPressed: () => _export(context, 'PDF'),
-          icon: const Icon(Icons.picture_as_pdf_outlined),
-          label: const Text('Export data as PDF'),
         ),
         const SizedBox(height: 14),
-        const AppCard(
-          child: Text(
-            'Export actions demonstrate the UI only. No file is created in the app sandbox.',
-            style: TextStyle(color: SemsColors.muted, fontSize: 12),
-          ),
+        const AppBanner(
+          tone: StatusTone.brand,
+          title: 'Export actions demonstrate the UI only. No file is created in the app sandbox.',
         ),
       ],
     ),

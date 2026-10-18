@@ -20,6 +20,7 @@ export 'app_toggle.dart';
 export 'app_top_bar.dart';
 export 'alert_card.dart';
 export 'appliance_icon.dart';
+export 'component_theme.dart';
 export 'empty_state.dart';
 export 'energy_charts.dart';
 export 'error_state.dart';

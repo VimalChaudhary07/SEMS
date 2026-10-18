@@ -21,6 +21,8 @@ abstract final class AppColorTokens {
   static const lightStatusFaultTint = Color(0xFFFBE6E6);
   static const lightStatusPendingTint = Color(0xFFE3ECFD);
   static const lightStatusAiTint = Color(0xFFECE6FB);
+  static const lightStatusOkTint = Color(0xFFDEF7EC);
+  static const lightStatusOfflineTint = Color(0xFFEFF1F4);
 }
 
 @immutable
@@ -69,8 +71,10 @@ class AppColors extends ThemeExtension<AppColors> {
     statusOffline: AppColorTokens.lightStatusOffline,
     statusPending: AppColorTokens.lightStatusPending,
     statusAi: AppColorTokens.lightStatusAi,
+    statusOkTint: AppColorTokens.lightStatusOkTint,
     statusWarningTint: AppColorTokens.lightStatusWarningTint,
     statusFaultTint: AppColorTokens.lightStatusFaultTint,
+    statusOfflineTint: AppColorTokens.lightStatusOfflineTint,
     statusPendingTint: AppColorTokens.lightStatusPendingTint,
     statusAiTint: AppColorTokens.lightStatusAiTint,
   );
@@ -92,6 +96,7 @@ class AppColors extends ThemeExtension<AppColors> {
     statusPending: Color(0xFF6FA0FF),
     statusAi: Color(0xFFA48CFF),
     statusOkTint: Color(0xFF1C3326),
+    statusWarningTint: Color(0xFF38290D),
     statusFaultTint: Color(0xFF3A1818),
     statusOfflineTint: Color(0xFF262E2D),
     statusPendingTint: Color(0xFF16264A),

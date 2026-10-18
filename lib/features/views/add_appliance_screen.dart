@@ -55,6 +55,7 @@ class _AddApplianceScreenState extends State<AddApplianceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
     final sockets = widget.repository.devices;
     SemsDevice? selectedSocket;
     for (final socket in sockets) {
@@ -65,8 +66,8 @@ class _AddApplianceScreenState extends State<AddApplianceScreen> {
         title: const Text('Add appliance'),
         actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Chip(label: Text(DemoSession.isMember ? 'Member' : 'Owner')),
+            padding: const EdgeInsets.only(right: 16),
+            child: RoleBadge(isFamily: DemoSession.isMember),
           ),
         ],
       ),
@@ -139,18 +140,19 @@ class _AddApplianceScreenState extends State<AddApplianceScreen> {
                   for (final socket in sockets)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: _socketId == socket.id
-                              ? SemsColors.mint
-                              : Colors.white,
-                          border: Border.all(
-                            color: _socketId == socket.id
-                                ? SemsColors.green
-                                : const Color(0xFFDDE5E1),
-                          ),
+                      child: Material(
+                        color: _socketId == socket.id
+                            ? colors.brandTint
+                            : colors.card,
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(
+                            color: _socketId == socket.id
+                                ? colors.brandPrimary
+                                : colors.border,
+                          ),
                         ),
+                        clipBehavior: Clip.antiAlias,
                         child: RadioListTile<String?>(
                           value: socket.id,
                           enabled: !_saving && socket.online,
@@ -164,18 +166,17 @@ class _AddApplianceScreenState extends State<AddApplianceScreen> {
                     ),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: _socketId == null
-                            ? SemsColors.mint
-                            : Colors.white,
-                        border: Border.all(
-                          color: _socketId == null
-                              ? SemsColors.green
-                              : const Color(0xFFDDE5E1),
-                        ),
+                    child: Material(
+                      color: _socketId == null ? colors.brandTint : colors.card,
+                      shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
+                        side: BorderSide(
+                          color: _socketId == null
+                              ? colors.brandPrimary
+                              : colors.border,
+                        ),
                       ),
+                      clipBehavior: Clip.antiAlias,
                       child: const RadioListTile<String?>(
                         value: null,
                         title: Text('Assign later'),
@@ -188,12 +189,10 @@ class _AddApplianceScreenState extends State<AddApplianceScreen> {
             ),
             if (selectedSocket != null &&
                 selectedSocket.appliance != 'Unassigned') ...[
-              AppCard(
-                color: const Color(0xFFFFF3DF),
-                child: Text(
-                  '${selectedSocket.appliance} will be unassigned. Its session closes at the current meter reading and its history stays.',
-                  style: const TextStyle(height: 1.4),
-                ),
+              AppBanner(
+                tone: StatusTone.warn,
+                title: '${selectedSocket.appliance} will be unassigned',
+                body: 'Its session closes at the current meter reading and its history stays.',
               ),
               const SizedBox(height: 8),
             ],
@@ -221,12 +220,9 @@ class _AddApplianceScreenState extends State<AddApplianceScreen> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: FilledButton(
+          child: AppButton(
+            label: _saving ? 'Adding…' : 'Create appliance',
             onPressed: _saving || DemoSession.isMember ? null : _save,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(50),
-            ),
-            child: Text(_saving ? 'Adding…' : 'Create appliance'),
           ),
         ),
       ),
@@ -271,30 +267,40 @@ class _CategoryTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: enabled ? onTap : null,
-    borderRadius: BorderRadius.circular(12),
-    child: Container(
-      decoration: BoxDecoration(
-        color: selected ? SemsColors.mint : Colors.white,
-        border: Border.all(
-          color: selected ? SemsColors.green : const Color(0xFFDDE5E1),
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: selected ? SemsColors.forest : SemsColors.muted),
-          const SizedBox(height: 5),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11),
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: selected ? colors.brandTint : colors.card,
+          border: Border.all(
+            color: selected ? colors.brandPrimary : colors.border,
           ),
-        ],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: selected ? colors.brandPrimary : colors.textSecondary,
+            ),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: selected ? colors.brandPrimary : colors.textPrimary,
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

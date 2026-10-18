@@ -197,9 +197,11 @@ class _SchedulesScreenState extends State<SchedulesScreen> {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          AppButton(
+            fullWidth: false,
+            variant: AppButtonVariant.danger,
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            label: 'Delete',
           ),
         ],
       ),
@@ -376,10 +378,10 @@ class _SchedulesScreenState extends State<SchedulesScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          FilledButton.icon(
+                          AppButton(
                             onPressed: _edit,
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Create schedule'),
+                            leadingIcon: Icons.add_rounded,
+                            label: 'Create schedule',
                           ),
                         ],
                       ),
@@ -414,13 +416,10 @@ class _SchedulesScreenState extends State<SchedulesScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  FilledButton.icon(
+                  AppButton(
                     onPressed: _edit,
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Create schedule'),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                    ),
+                    leadingIcon: Icons.add_rounded,
+                    label: 'Create schedule',
                   ),
                 ],
               ],
@@ -477,7 +476,7 @@ class _ScheduleCard extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
-                Switch.adaptive(value: schedule.enabled, onChanged: onToggle),
+                AppToggle(value: schedule.enabled, onChanged: onToggle),
               ],
             ),
             Text(
@@ -530,7 +529,7 @@ class _LoadError extends StatelessWidget {
             style: const TextStyle(color: SemsColors.muted, fontSize: 12),
           ),
           const SizedBox(height: 12),
-          FilledButton(onPressed: onRetry, child: const Text('Try again')),
+          AppButton(fullWidth: false, onPressed: onRetry, label: 'Try again'),
         ],
       ),
     ),
@@ -708,8 +707,8 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
               runSpacing: 4,
               children: [
                 for (final type in _types)
-                  ChoiceChip(
-                    label: Text(type.$2),
+                  AppChip(
+                    label: type.$2,
                     selected: _kind == type.$1,
                     onSelected: (_) => setState(() => _kind = type.$1),
                   ),
@@ -747,8 +746,8 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                 spacing: 5,
                 children: [
                   for (var index = 0; index < _dayNames.length; index++)
-                    ChoiceChip(
-                      label: Text(_dayNames[index]),
+                    AppChip(
+                      label: _dayNames[index],
                       selected: _selectedDays.contains(_dayValues[index]),
                       onSelected: (selected) => setState(() {
                         if (selected) {
@@ -791,11 +790,10 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
             if (!_clockSynced && !_checkingClock)
               const Padding(
                 padding: EdgeInsets.only(top: 12),
-                child: AppCard(
-                  child: Text(
-                    'Waiting for time sync. This socket needs a valid clock before schedules can run.',
-                    style: TextStyle(color: SemsColors.muted),
-                  ),
+                child: AppBanner(
+                  tone: StatusTone.warn,
+                  title: 'Waiting for time sync',
+                  body: 'This socket needs a valid clock before schedules can run.',
                 ),
               ),
             if (_kind != 'countdown' && _kind != 'oneTime') ...[
@@ -847,11 +845,7 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
       ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: FilledButton(
-          onPressed: _save,
-          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-          child: const Text('Save schedule'),
-        ),
+        child: AppButton(onPressed: _save, label: 'Save schedule'),
       ),
     );
   }

@@ -122,24 +122,26 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        FilledButton.icon(
+        AppButton(
           onPressed: busy || DemoSession.isMember ? null : _backup,
-          icon: const Icon(Icons.backup_outlined),
-          label: Text(connected ? 'Back up now' : 'Create local demo backup'),
+          leadingIcon: Icons.backup_outlined,
+          label: connected ? 'Back up now' : 'Create local demo backup',
         ),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
+        AppButton(
+          variant: AppButtonVariant.secondary,
           onPressed: !backupExists || busy || DemoSession.isMember
               ? null
               : _verify,
-          icon: const Icon(Icons.fact_check_outlined),
-          label: const Text('Verify backup'),
+          leadingIcon: Icons.fact_check_outlined,
+          label: 'Verify backup',
         ),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
+        AppButton(
+          variant: AppButtonVariant.secondary,
           onPressed: busy || DemoSession.isMember ? null : _startRestore,
-          icon: const Icon(Icons.restore_rounded),
-          label: const Text('Restore from backup'),
+          leadingIcon: Icons.restore_rounded,
+          label: 'Restore from backup',
         ),
         if (error != null) ...[
           const SizedBox(height: 12),
@@ -165,10 +167,9 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                LinearProgressIndicator(
+                AppProgressBar(
                   value: (restoreStep + 1) / restoreSteps.length,
-                  minHeight: 5,
-                  borderRadius: BorderRadius.circular(5),
+                  height: 6,
                 ),
                 const SizedBox(height: 10),
                 Text(
@@ -180,15 +181,13 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                FilledButton(
+                AppButton(
                   onPressed: _advanceRestore,
-                  child: Text(
-                    restoreStep == restoreSteps.length - 1
-                        ? 'Done'
-                        : restoreStep == 2
-                        ? 'Review and continue'
-                        : 'Continue',
-                  ),
+                  label: restoreStep == restoreSteps.length - 1
+                      ? 'Done'
+                      : restoreStep == 2
+                      ? 'Review and continue'
+                      : 'Continue',
                 ),
               ],
             ),
@@ -236,9 +235,10 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          AppButton(
+            fullWidth: false,
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Continue with demo'),
+            label: 'Continue with demo',
           ),
         ],
       ),
@@ -398,10 +398,10 @@ class _ManualBackupSheetState extends State<_ManualBackupSheet> {
             value: history,
             onChanged: (v) => setState(() => history = v),
           ),
-          FilledButton(
+          AppButton(
             onPressed: () =>
                 Navigator.pop(context, settings || schedules || history),
-            child: const Text('Create backup'),
+            label: 'Create backup',
           ),
         ],
       ),
@@ -414,19 +414,11 @@ class _ErrorBanner extends StatelessWidget {
   final String title;
   final VoidCallback onRetry;
   @override
-  Widget build(BuildContext context) => AppCard(
-    child: Row(
-      children: [
-        const Icon(Icons.error_outline_rounded, color: SemsColors.red),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-        TextButton(onPressed: onRetry, child: const Text('Retry')),
-      ],
-    ),
+  Widget build(BuildContext context) => AppBanner(
+    tone: StatusTone.fault,
+    icon: Icons.error_outline_rounded,
+    title: title,
+    actionText: 'Retry',
+    onAction: onRetry,
   );
 }

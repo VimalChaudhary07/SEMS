@@ -76,30 +76,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ),
             ),
             const Expanded(
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.bar_chart_rounded, size: 54),
-                      SizedBox(height: 18),
-                      Text(
-                        'No history yet',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        'Usage appears here after your first socket starts reporting.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: SemsColors.muted),
-                      ),
-                    ],
-                  ),
-                ),
+              child: EmptyState(
+                title: 'No history yet',
+                message: 'Usage appears here after your first socket starts reporting.',
+                icon: Icons.bar_chart_rounded,
               ),
             ),
           ],
@@ -131,8 +111,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 })
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
-                    child: ChoiceChip(
-                      label: Text(appliance),
+                    child: AppChip(
+                      label: appliance,
                       selected: selectedAppliance == appliance,
                       onSelected: (_) =>
                           setState(() => selectedAppliance = appliance),
@@ -160,8 +140,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       ])
                         Padding(
                           padding: const EdgeInsets.only(right: 5),
-                          child: ChoiceChip(
-                            label: Text(item),
+                          child: AppChip(
+                            label: item,
                             selected: range == item,
                             onSelected: (_) => setState(() {
                               range = item;
@@ -326,10 +306,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                LinearProgressIndicator(
+                AppProgressBar(
                   value: (widget.repository.coverageDays / 45).clamp(0, 1),
-                  minHeight: 5,
-                  borderRadius: BorderRadius.all(Radius.circular(6)),
+                  height: 6,
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -470,42 +449,47 @@ class _HistoryMetric extends StatelessWidget {
   final String title, value, unit, foot;
   final IconData icon;
   @override
-  Widget build(BuildContext context) => AppCard(
-    padding: const EdgeInsets.all(9),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(color: SemsColors.muted, fontSize: 10),
-        ),
-        const SizedBox(height: 3),
-        FittedBox(
-          alignment: Alignment.centerLeft,
-          fit: BoxFit.scaleDown,
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-          ),
-        ),
-        if (unit.isNotEmpty)
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return AppCard(
+      padding: const EdgeInsets.all(9),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
-            unit,
-            style: const TextStyle(fontSize: 9, color: SemsColors.muted),
+            title,
+            style: TextStyle(color: colors.textSecondary, fontSize: 10),
           ),
-        const SizedBox(height: 4),
-        Text(
-          foot,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 9,
-            color: title == 'Energy' ? SemsColors.amber : SemsColors.muted,
+          const SizedBox(height: 3),
+          FittedBox(
+            alignment: Alignment.centerLeft,
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+          if (unit.isNotEmpty)
+            Text(
+              unit,
+              style: TextStyle(fontSize: 9, color: colors.textSecondary),
+            ),
+          const SizedBox(height: 4),
+          Text(
+            foot,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 9,
+              color: title == 'Energy'
+                  ? colors.statusWarning
+                  : colors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _HistoryBars extends StatelessWidget {
@@ -520,40 +504,43 @@ class _HistoryBars extends StatelessWidget {
   final int? selectedIndex;
   final ValueChanged<int> onSelected;
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 130,
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        for (var i = 0; i < values.length; i++)
-          Expanded(
-            child: InkWell(
-              key: ValueKey('history-bar-$i'),
-              onTap: () => onSelected(i),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: FractionallySizedBox(
-                  heightFactor: maxValue <= 0
-                      ? .08
-                      : (values[i] / maxValue).clamp(.08, 1),
-                  alignment: Alignment.bottomCenter,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: selectedIndex == i
-                          ? SemsColors.forest
-                          : SemsColors.green,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(3),
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return SizedBox(
+      height: 130,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (var i = 0; i < values.length; i++)
+            Expanded(
+              child: InkWell(
+                key: ValueKey('history-bar-$i'),
+                onTap: () => onSelected(i),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: FractionallySizedBox(
+                    heightFactor: maxValue <= 0
+                        ? .08
+                        : (values[i] / maxValue).clamp(.08, 1),
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: selectedIndex == i
+                            ? colors.brandPrimary
+                            : colors.brandTint,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(3),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class _SessionRow extends StatelessWidget {
@@ -567,63 +554,66 @@ class _SessionRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      ListTile(
-        onTap: onTap,
-        leading: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: SemsColors.mint,
-            borderRadius: BorderRadius.circular(9),
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return Column(
+      children: [
+        ListTile(
+          onTap: onTap,
+          leading: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: colors.brandTint,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(
+              Icons.bolt_rounded,
+              color: colors.brandPrimary,
+              size: 19,
+            ),
           ),
-          child: const Icon(
-            Icons.bolt_rounded,
-            color: SemsColors.forest,
-            size: 19,
+          title: Row(
+            children: [
+              Text(
+                device.appliance,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 7),
+              const StatusBadge(
+                label: 'Open',
+                tone: StatusTone.brand,
+                compact: true,
+              ),
+            ],
+          ),
+          subtitle: Text(
+            '${device.id} · ${device.room}',
+            style: TextStyle(color: colors.textSecondary, fontSize: 10),
+          ),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${device.todayKwh} kWh',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                'Est. ₹${(device.todayKwh * 8).round()}',
+                style: TextStyle(color: colors.textSecondary, fontSize: 10),
+              ),
+            ],
           ),
         ),
-        title: Row(
-          children: [
-            Text(
-              device.appliance,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-            ),
-            const SizedBox(width: 7),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: SemsColors.mint,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                'Open',
-                style: TextStyle(color: SemsColors.forest, fontSize: 9),
-              ),
-            ),
-          ],
-        ),
-        subtitle: Text(
-          '${device.id} · ${device.room}',
-          style: const TextStyle(color: SemsColors.muted, fontSize: 10),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '${device.todayKwh} kWh',
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-            ),
-            Text(
-              'Est. ₹${(device.todayKwh * 8).round()}',
-              style: const TextStyle(color: SemsColors.muted, fontSize: 10),
-            ),
-          ],
-        ),
-      ),
-      if (!isLast) const Divider(height: 1, indent: 56),
-    ],
-  );
+        if (!isLast) const Divider(height: 1, indent: 56),
+      ],
+    );
+  }
 }

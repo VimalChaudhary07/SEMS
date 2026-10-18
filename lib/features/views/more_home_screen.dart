@@ -62,7 +62,7 @@ class MoreScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              _OwnerBadge(label: DemoSession.isMember ? 'Member' : 'Owner'),
+              RoleBadge(isFamily: DemoSession.isMember),
             ],
           ),
         ),
@@ -170,27 +170,6 @@ class MoreScreen extends StatelessWidget {
       Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
 }
 
-class _OwnerBadge extends StatelessWidget {
-  const _OwnerBadge({this.label = 'Owner'});
-  final String label;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(
-      color: SemsColors.mint,
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Text(
-      label,
-      style: const TextStyle(
-        color: SemsColors.forest,
-        fontWeight: FontWeight.w600,
-        fontSize: 11,
-      ),
-    ),
-  );
-}
-
 class _MoreTile extends StatelessWidget {
   const _MoreTile({
     required this.icon,
@@ -213,10 +192,14 @@ class _MoreTile extends StatelessWidget {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: SemsColors.mint,
+            color: ComponentTheme.colors(context).brandTint,
             borderRadius: BorderRadius.circular(11),
           ),
-          child: Icon(icon, size: 19, color: SemsColors.forest),
+          child: Icon(
+            icon,
+            size: 19,
+            color: ComponentTheme.colors(context).brandPrimary,
+          ),
         ),
         title: Text(
           title,
@@ -479,22 +462,18 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
                 style: const TextStyle(color: SemsColors.muted),
               ),
               const SizedBox(height: 10),
-              Chip(
-                label: Text(
-                  appliance.archived
-                      ? 'Archived'
-                      : appliance.socketId == null
-                      ? 'Assign a socket'
-                      : appliance.online
-                      ? 'Online'
-                      : 'Offline',
-                ),
-                avatar: Icon(
-                  appliance.online
-                      ? Icons.wifi_rounded
-                      : Icons.wifi_off_rounded,
-                  size: 16,
-                ),
+              StatusBadge(
+                label: appliance.archived
+                    ? 'Archived'
+                    : appliance.socketId == null
+                    ? 'Assign a socket'
+                    : appliance.online
+                    ? 'Online'
+                    : 'Offline',
+                icon: appliance.online
+                    ? Icons.wifi_rounded
+                    : Icons.wifi_off_rounded,
+                tone: appliance.online ? StatusTone.ok : StatusTone.off,
               ),
             ],
           ),
@@ -561,7 +540,7 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
         ),
         if (appliance.socketId != null) ...[
           const SizedBox(height: 14),
-          FilledButton(
+          AppButton(
             onPressed: () {
               final socket = widget.repository.devices.firstWhere(
                 (item) => item.id == appliance.socketId,
@@ -577,14 +556,15 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
                 ),
               );
             },
-            child: const Text('Open connected socket'),
+            label: 'Open connected socket',
           ),
         ],
         if (!DemoSession.isMember && !appliance.archived) ...[
           const SizedBox(height: 8),
-          OutlinedButton(
+          AppButton(
+            variant: AppButtonVariant.secondary,
             onPressed: working ? null : _rename,
-            child: const Text('Rename appliance'),
+            label: 'Rename appliance',
           ),
         ],
         if (working)
@@ -620,9 +600,10 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          AppButton(
+            fullWidth: false,
             onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Save'),
+            label: 'Save',
           ),
         ],
       ),
@@ -656,9 +637,11 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          AppButton(
+            fullWidth: false,
+            variant: AppButtonVariant.danger,
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Archive'),
+            label: 'Archive',
           ),
         ],
       ),
@@ -730,11 +713,7 @@ class _MoveApplianceScreenState extends State<MoveApplianceScreen> {
     body: ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        LinearProgressIndicator(
-          value: step >= 3 ? 1 : (step + 1) / 3,
-          minHeight: 5,
-          borderRadius: BorderRadius.circular(4),
-        ),
+        AppProgressBar(value: step >= 3 ? 1 : (step + 1) / 3, height: 5),
         const SizedBox(height: 24),
         Text(
           [
@@ -849,22 +828,19 @@ class _MoveApplianceScreenState extends State<MoveApplianceScreen> {
             ),
           ),
         const SizedBox(height: 24),
-        FilledButton(
+        AppButton(
           onPressed: working
               ? null
               : step == 3
               ? () => Navigator.pop(context)
               : _next,
-          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-          child: Text(
-            working
-                ? 'Moving…'
-                : step == 2
-                ? 'Confirm move'
-                : step == 3
-                ? 'Done'
-                : 'Continue',
-          ),
+          label: working
+              ? 'Moving…'
+              : step == 2
+              ? 'Confirm move'
+              : step == 3
+              ? 'Done'
+              : 'Continue',
         ),
       ],
     ),

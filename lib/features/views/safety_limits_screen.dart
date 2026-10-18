@@ -50,9 +50,7 @@ class _SafetyLimitsScreenState extends State<SafetyLimitsScreen> {
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 16),
-          child: Center(
-            child: _RoleBadge(label: _readOnly ? 'Family' : 'Owner'),
-          ),
+          child: Center(child: RoleBadge(isFamily: _readOnly)),
         ),
       ],
     ),
@@ -66,35 +64,11 @@ class _SafetyLimitsScreenState extends State<SafetyLimitsScreen> {
             style: const TextStyle(color: SemsColors.muted, fontSize: 12),
           ),
         ),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE7EEFF),
-            border: Border.all(color: const Color(0xFF3668F5)),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.shield_outlined, color: Color(0xFF3668F5), size: 20),
-              SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Applies on the socket',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    SizedBox(height: 3),
-                    Text(
-                      'It recovers by itself after 60 s, up to 3 times.',
-                      style: TextStyle(color: SemsColors.muted, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        const AppBanner(
+          tone: StatusTone.brand,
+          icon: Icons.shield_outlined,
+          title: 'Applies on the socket',
+          body: 'It recovers by itself after 60 s, up to 3 times.',
         ),
         const SizedBox(height: 16),
         if (_readOnly)
@@ -150,14 +124,7 @@ class _SafetyLimitsScreenState extends State<SafetyLimitsScreen> {
                   ],
                 ),
                 const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: FilledButton(
-                    onPressed: _save,
-                    child: const Text('Save limits'),
-                  ),
-                ),
+                AppButton(label: 'Save limits', onPressed: _save),
               ],
             ),
           ),
@@ -275,30 +242,4 @@ class _SafetyLimitsScreenState extends State<SafetyLimitsScreen> {
 
   static String _formatLimit(double value) =>
       value == value.roundToDouble() ? value.toInt().toString() : '$value';
-}
-
-class _RoleBadge extends StatelessWidget {
-  const _RoleBadge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-    decoration: BoxDecoration(
-      color: _readOnlyColor,
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Text(
-      label,
-      style: const TextStyle(
-        color: SemsColors.forest,
-        fontWeight: FontWeight.w600,
-        fontSize: 11,
-      ),
-    ),
-  );
-
-  Color get _readOnlyColor =>
-      DemoSession.isMember ? const Color(0xFFE7EEFF) : SemsColors.mint;
 }

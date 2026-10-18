@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/session/demo_session.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/sems_models.dart';
 import '../../data/repositories/sems_repository.dart';
@@ -54,9 +55,9 @@ class _AlertsScreenState extends State<AlertsScreen> {
             onPressed: _settings,
             icon: const Icon(Icons.tune_rounded),
           ),
-          const Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: _OwnerBadge(),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: RoleBadge(isFamily: DemoSession.isMember),
           ),
         ],
       ),
@@ -75,28 +76,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
                 for (final filter in filters)
                   Padding(
                     padding: const EdgeInsets.only(right: 7),
-                    child: ChoiceChip(
+                    child: AppChip(
                       selected: selected == filter,
-                      label: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(filter),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
-                            decoration: BoxDecoration(
-                              color: selected == filter
-                                  ? Colors.white
-                                  : SemsColors.canvas,
-                              borderRadius: BorderRadius.circular(9),
-                            ),
-                            child: Text(
-                              '${_countFor(filter)}',
-                              style: const TextStyle(fontSize: 10),
-                            ),
-                          ),
-                        ],
-                      ),
+                      label: filter,
+                      count: _countFor(filter),
                       onSelected: (_) => setState(() => selected = filter),
                     ),
                   ),
@@ -136,25 +119,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
           ),
           const SizedBox(height: 12),
           if (alerts.isEmpty)
-            const AppCard(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.notifications_off_outlined,
-                      size: 36,
-                      color: SemsColors.muted,
-                    ),
-                    SizedBox(height: 10),
-                    Text('No alerts in this category'),
-                    Text(
-                      'You are all caught up.',
-                      style: TextStyle(color: SemsColors.muted, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
+            const EmptyState(
+              title: 'No alerts in this category',
+              message: 'You are all caught up.',
+              icon: Icons.notifications_off_outlined,
             ),
           for (final alert in alerts)
             Padding(
@@ -228,15 +196,12 @@ class _AlertsScreenState extends State<AlertsScreen> {
               style: const TextStyle(color: SemsColors.muted, fontSize: 11),
             ),
             const SizedBox(height: 18),
-            FilledButton(
+            AppButton(
               onPressed: () {
                 unawaited(_acknowledge(alert));
                 Navigator.pop(context);
               },
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-              ),
-              child: Text(alert.acknowledged ? 'Acknowledged' : 'Acknowledge'),
+              label: alert.acknowledged ? 'Acknowledged' : 'Acknowledge',
             ),
           ],
         ),
@@ -283,14 +248,14 @@ class _AlertCard extends StatelessWidget {
       onTap: onOpen,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: ComponentTheme.colors(context).card,
           border: Border(left: BorderSide(color: color, width: 4)),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Color(0x0D101614),
+              color: Colors.black.withValues(alpha: .05),
               blurRadius: 8,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -567,36 +532,13 @@ class _AlertSettingsSheetState extends State<_AlertSettingsSheet> {
                       ],
                     ),
                   const SizedBox(height: 14),
-                  FilledButton(
+                  AppButton(
                     onPressed: _saving ? null : _save,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                    ),
-                    child: Text(_saving ? 'Saving…' : 'Save'),
+                    label: _saving ? 'Saving…' : 'Save',
                   ),
                 ],
               ),
             ),
-    ),
-  );
-}
-
-class _OwnerBadge extends StatelessWidget {
-  const _OwnerBadge();
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-    decoration: BoxDecoration(
-      color: SemsColors.mint,
-      borderRadius: BorderRadius.circular(18),
-    ),
-    child: const Text(
-      'Owner',
-      style: TextStyle(
-        color: SemsColors.forest,
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-      ),
     ),
   );
 }

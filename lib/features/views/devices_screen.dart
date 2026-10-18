@@ -47,10 +47,10 @@ class _DevicesScreenState extends State<DevicesScreen> {
                   ? null
                   : IconButton(
                       onPressed: _openSetup,
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.add_circle_outline_rounded,
                         size: 27,
-                        color: SemsColors.forest,
+                        color: ComponentTheme.colors(context).brandPrimary,
                       ),
                     ),
             ),
@@ -76,8 +76,8 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 for (final room in ['All', 'Living room', 'Bedroom', 'Kitchen'])
                   Padding(
                     padding: const EdgeInsets.only(right: 7),
-                    child: ChoiceChip(
-                      label: Text(room),
+                    child: AppChip(
+                      label: room,
                       selected: selectedRoom == room,
                       onSelected: (_) => setState(() => selectedRoom = room),
                     ),
@@ -125,7 +125,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
                       ? Icons.search_off_rounded
                       : Icons.power_rounded,
                   size: 38,
-                  color: SemsColors.forest,
+                  color: ComponentTheme.colors(context).brandPrimary,
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -140,10 +140,10 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 ),
                 if (!hasAnyDevices && !DemoSession.isMember) ...[
                   const SizedBox(height: 14),
-                  FilledButton.icon(
+                  AppButton(
                     onPressed: _openSetup,
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Add socket'),
+                    leadingIcon: Icons.add_rounded,
+                    label: 'Add socket',
                   ),
                 ],
               ],
@@ -173,102 +173,118 @@ class _DeviceCard extends StatelessWidget {
   final SemsDevice device;
   final SemsRepository repository;
   final VoidCallback onChanged;
+
   @override
-  Widget build(BuildContext context) => AppCard(
-    padding: const EdgeInsets.fromLTRB(14, 14, 14, 11),
-    child: InkWell(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => DeviceDetailScreen(
-            device: device,
-            repository: repository,
-            onChanged: onChanged,
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: colors.border),
+      ),
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => DeviceDetailScreen(
+              device: device,
+              repository: repository,
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: device.online
+                          ? colors.brandTint
+                          : (colors.statusOfflineTint ?? colors.raised),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      _applianceIcon,
+                      color: device.online
+                          ? colors.brandPrimary
+                          : colors.statusOffline,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          device.name,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${device.room} · ${device.appliance}',
+                          style: TextStyle(
+                            color: colors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    device.online && device.isOn
+                        ? '${device.watts.toStringAsFixed(0)} W'
+                        : '—',
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  StatusBadge(
+                    label: device.online ? 'Online' : 'Offline',
+                    tone: device.online ? StatusTone.ok : StatusTone.off,
+                    icon: device.online
+                        ? Icons.wifi_rounded
+                        : Icons.wifi_off_rounded,
+                  ),
+                  if (device.online) ...[
+                    const SizedBox(width: 6),
+                    StatusBadge(
+                      label: device.isOn ? 'ON' : 'OFF',
+                      tone: device.isOn ? StatusTone.ok : StatusTone.mute,
+                      icon: Icons.power_settings_new_rounded,
+                    ),
+                  ],
+                  const Spacer(),
+                  SignalBars(level: device.online ? 3 : 0),
+                  const SizedBox(width: 6),
+                  Text(
+                    device.online ? '4 s ago' : '14 min ago',
+                    style: TextStyle(color: colors.textSecondary, fontSize: 11),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: device.online
-                      ? SemsColors.mint
-                      : const Color(0xFFECEFEE),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  _applianceIcon,
-                  color: device.online ? SemsColors.forest : SemsColors.muted,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      device.name,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      '${device.room} · ${device.appliance}',
-                      style: const TextStyle(
-                        color: SemsColors.muted,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                device.online && device.isOn
-                    ? '${device.watts.toStringAsFixed(0)} W'
-                    : '—',
-                style: const TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              _statusBadge(
-                icon: device.online
-                    ? Icons.wifi_rounded
-                    : Icons.wifi_off_rounded,
-                label: device.online ? 'Online' : 'Offline',
-                isActive: device.online,
-              ),
-              if (device.online) ...[
-                const SizedBox(width: 7),
-                _statusBadge(
-                  icon: Icons.power_settings_new_rounded,
-                  label: device.isOn ? 'ON' : 'OFF',
-                  isActive: device.isOn,
-                ),
-              ],
-              const Spacer(),
-              Icon(
-                Icons.signal_cellular_alt_rounded,
-                size: 15,
-                color: device.online ? SemsColors.ink : SemsColors.line,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                device.online ? '4 s ago' : '14 min ago',
-                style: const TextStyle(color: SemsColors.muted, fontSize: 11),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
+    );
+  }
 
   IconData get _applianceIcon {
     final name = device.appliance.toLowerCase();
@@ -279,34 +295,4 @@ class _DeviceCard extends StatelessWidget {
     if (name.contains('heater')) return Icons.local_fire_department_outlined;
     return Icons.power_rounded;
   }
-
-  Widget _statusBadge({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-  }) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-    decoration: BoxDecoration(
-      color: isActive ? SemsColors.mint : const Color(0xFFECEFEE),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 12,
-          color: isActive ? SemsColors.forest : SemsColors.muted,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: isActive ? SemsColors.forest : SemsColors.muted,
-            fontSize: 11,
-          ),
-        ),
-      ],
-    ),
-  );
 }

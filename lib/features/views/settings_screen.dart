@@ -17,8 +17,8 @@ class SettingsScreen extends StatelessWidget {
       title: const Text('Settings'),
       actions: [
         Padding(
-          padding: EdgeInsets.only(right: 16),
-          child: _OwnerBadge(label: DemoSession.isMember ? 'Member' : 'Owner'),
+          padding: const EdgeInsets.only(right: 16),
+          child: RoleBadge(isFamily: DemoSession.isMember),
         ),
       ],
     ),
@@ -58,7 +58,7 @@ class SettingsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                _OwnerBadge(label: DemoSession.isMember ? 'Member' : 'Owner'),
+                RoleBadge(isFamily: DemoSession.isMember),
               ],
             ),
           ),
@@ -224,12 +224,13 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          AppButton(
+            fullWidth: false,
+            variant: deleting
+                ? AppButtonVariant.danger
+                : AppButtonVariant.primary,
             onPressed: () => Navigator.pop(context, true),
-            style: deleting
-                ? FilledButton.styleFrom(backgroundColor: SemsColors.red)
-                : null,
-            child: Text(deleting ? 'Delete account' : 'Sign out'),
+            label: deleting ? 'Delete account' : 'Sign out',
           ),
         ],
       ),
@@ -240,27 +241,6 @@ class SettingsScreen extends StatelessWidget {
       (_) => false,
     );
   }
-}
-
-class _OwnerBadge extends StatelessWidget {
-  const _OwnerBadge({required this.label});
-  final String label;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-    decoration: BoxDecoration(
-      color: SemsColors.mint,
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Text(
-      label,
-      style: const TextStyle(
-        color: SemsColors.forest,
-        fontWeight: FontWeight.w600,
-        fontSize: 11,
-      ),
-    ),
-  );
 }
 
 class _SettingsGroup extends StatelessWidget {
@@ -313,10 +293,14 @@ class _SettingsTile extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: SemsColors.mint,
+            color: ComponentTheme.colors(context).brandTint,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, size: 19, color: SemsColors.forest),
+          child: Icon(
+            icon,
+            size: 19,
+            color: ComponentTheme.colors(context).brandPrimary,
+          ),
         ),
         title: Text(
           title,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/constants/app_assets.dart';
+import '../../core/session/demo_session.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/sems_models.dart';
 import '../../data/repositories/sems_repository.dart';
@@ -78,7 +79,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       icon: const Icon(Icons.tune_rounded),
                     ),
-                    const _OwnerBadge(),
+                    RoleBadge(isFamily: DemoSession.isMember),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -228,6 +229,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         value: '₹1,292',
                         unit: 'Est.',
                         note: 'Estimated',
+                        isEstimated: true,
                         onTap: () => _go(
                           context,
                           BillsScreen(repository: widget.repository),
@@ -256,6 +258,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: Icons.show_chart_rounded,
                     tag: 'HIGH',
                     color: SemsColors.red,
+                    accentColor: SemsColors.red,
                     title: 'Heater is 47% above normal',
                     subtitle: 'Current 2,200 W, usual 1,500 W',
                     button: 'Check appliance',
@@ -313,8 +316,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ])
                         Padding(
                           padding: const EdgeInsets.only(right: 6),
-                          child: ChoiceChip(
-                            label: Text(room),
+                          child: AppChip(
+                            label: room,
                             selected: selectedRoom == room,
                             onSelected: (_) =>
                                 setState(() => selectedRoom = room),
@@ -483,7 +486,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 icon: const Icon(Icons.tune_rounded),
               ),
-              const _OwnerBadge(),
+              RoleBadge(isFamily: DemoSession.isMember),
             ],
           ),
         ),
@@ -496,8 +499,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Container(
                   width: 96,
                   height: 96,
-                  decoration: const BoxDecoration(
-                    color: SemsColors.mint,
+                  decoration: BoxDecoration(
+                    color: ComponentTheme.colors(context).brandTint,
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
@@ -505,8 +508,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     AppAssets.splashSocket,
                     width: 32,
                     height: 32,
-                    colorFilter: const ColorFilter.mode(
-                      SemsColors.forest,
+                    colorFilter: ColorFilter.mode(
+                      ComponentTheme.colors(context).brandPrimary,
                       BlendMode.srcIn,
                     ),
                   ),
@@ -527,14 +530,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: FilledButton.icon(
-                    onPressed: _openSetup,
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Add socket'),
-                  ),
+                AppButton(
+                  label: 'Add socket',
+                  leadingIcon: Icons.add_rounded,
+                  onPressed: _openSetup,
                 ),
               ],
             ),
@@ -555,26 +554,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _go(BuildContext context, Widget page) =>
       Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page));
-}
-
-class _OwnerBadge extends StatelessWidget {
-  const _OwnerBadge();
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-    decoration: BoxDecoration(
-      color: SemsColors.mint,
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: const Text(
-      'Owner',
-      style: TextStyle(
-        color: SemsColors.forest,
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-  );
 }
 
 class _OfflineBanner extends StatelessWidget {
@@ -677,24 +656,44 @@ class _CompactMetric extends StatelessWidget {
     required this.value,
     required this.unit,
     required this.note,
+    this.isEstimated = false,
     this.onTap,
   });
+
   final String title, value, unit, note;
+  final bool isEstimated;
   final VoidCallback? onTap;
+
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(12),
-    child: AppCard(
-      padding: const EdgeInsets.all(10),
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    final cardContent = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: isEstimated ? null : Border.all(color: colors.border),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(color: SemsColors.muted, fontSize: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+              if (isEstimated)
+                Icon(Icons.auto_awesome, size: 12, color: colors.statusAi),
+            ],
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 4),
           FittedBox(
             alignment: Alignment.centerLeft,
             fit: BoxFit.scaleDown,
@@ -704,9 +703,10 @@ class _CompactMetric extends StatelessWidget {
               children: [
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 17,
+                  style: TextStyle(
+                    fontSize: 18,
                     fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
                   ),
                 ),
                 if (unit.isNotEmpty)
@@ -714,9 +714,10 @@ class _CompactMetric extends StatelessWidget {
                     padding: const EdgeInsets.only(left: 3),
                     child: Text(
                       unit,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: SemsColors.muted,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ),
@@ -728,12 +729,28 @@ class _CompactMetric extends StatelessWidget {
             note,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: SemsColors.muted, fontSize: 9),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+            ),
           ),
         ],
       ),
-    ),
-  );
+    );
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      child: isEstimated
+          ? DashedOutline(
+              color: colors.border,
+              radius: AppRadii.card,
+              child: cardContent,
+            )
+          : cardContent,
+    );
+  }
 }
 
 class _LearningInsightCard extends StatelessWidget {
@@ -776,14 +793,10 @@ class _LearningInsightCard extends StatelessWidget {
           style: const TextStyle(color: SemsColors.muted, fontSize: 12),
         ),
         const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: LinearProgressIndicator(
-            value: (days / recommendedDays).clamp(0, 1),
-            minHeight: 5,
-            backgroundColor: SemsColors.line,
-            color: const Color(0xFF7955D9),
-          ),
+        AppProgressBar(
+          value: (days / recommendedDays).clamp(0, 1),
+          tone: 'ai',
+          height: 5,
         ),
         const SizedBox(height: 4),
         Text(
@@ -804,90 +817,118 @@ class _InsightCard extends StatelessWidget {
     required this.subtitle,
     required this.button,
     required this.onTap,
+    this.accentColor,
   });
+
   final IconData icon;
   final String tag, title, subtitle, button;
   final Color color;
+  final Color? accentColor;
   final VoidCallback onTap;
+
   @override
-  Widget build(BuildContext context) => AppCard(
-    padding: const EdgeInsets.all(12),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: .12),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 17, color: color),
-        ),
-        const SizedBox(width: 9),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: colors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (accentColor != null) Container(width: 4, color: accentColor),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: .12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(icon, size: 16, color: color),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: .12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            tag,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: color,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: .12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      tag,
+                    const SizedBox(height: 6),
+                    Text(
+                      subtitle,
                       style: TextStyle(
-                        fontSize: 9,
-                        color: color,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                        height: 1.4,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                style: const TextStyle(fontSize: 10, color: SemsColors.muted),
-              ),
-              const SizedBox(height: 5),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: onTap,
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 7,
-                      vertical: 3,
+                    const SizedBox(height: 10),
+                    InkWell(
+                      onTap: onTap,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        height: 36,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: colors.raised,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          button,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ),
                     ),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(button, style: const TextStyle(fontSize: 10)),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }
 
 class _ApplianceTile extends StatelessWidget {
@@ -900,87 +941,93 @@ class _ApplianceTile extends StatelessWidget {
   final VoidCallback onTap, onPower;
   @override
   Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
     final duration = MediaQuery.of(context).disableAnimations
         ? Duration.zero
         : const Duration(milliseconds: 240);
-    return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: colors.border),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
-          InkWell(
-            onTap: onTap,
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: duration,
-                  curve: Curves.easeInOutCubic,
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: device.online
-                        ? SemsColors.mint
-                        : const Color(0xFFECEEF0),
-                    borderRadius: BorderRadius.circular(9),
+          Expanded(
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(8),
+              child: Row(
+                children: [
+                  AnimatedContainer(
+                    duration: duration,
+                    curve: Curves.easeInOutCubic,
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: device.online
+                          ? colors.brandTint
+                          : (colors.statusOfflineTint ?? colors.raised),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      _icon(device.appliance),
+                      size: 20,
+                      color: device.online
+                          ? colors.brandPrimary
+                          : colors.statusOffline,
+                    ),
                   ),
-                  child: Icon(
-                    _icon(device.appliance),
-                    size: 18,
-                    color: device.online ? SemsColors.forest : SemsColors.muted,
-                  ),
-                ),
-                const SizedBox(width: 9),
-                SizedBox(
-                  width: 92,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        device.appliance,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        device.room,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: SemsColors.muted,
-                        ),
-                      ),
-                      AnimatedSwitcher(
-                        duration: duration,
-                        transitionBuilder: (child, animation) => FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, .15),
-                              end: Offset.zero,
-                            ).animate(animation),
-                            child: child,
-                          ),
-                        ),
-                        child: Text(
-                          device.online
-                              ? '● Online  ● ${device.isOn ? 'ON' : 'OFF'}'
-                              : '● Offline',
-                          key: ValueKey('${device.online}_${device.isOn}'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          device.appliance,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 9,
-                            color: device.online
-                                ? SemsColors.green
-                                : SemsColors.muted,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 2),
+                        Text(
+                          '${device.room} · ${device.id}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        AnimatedSwitcher(
+                          duration: duration,
+                          child: Text(
+                            device.online
+                                ? '● Online · ${device.isOn ? 'ON' : 'OFF'}'
+                                : '● Offline',
+                            key: ValueKey('${device.online}_${device.isOn}'),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: device.online
+                                  ? (device.isOn
+                                        ? colors.statusOk
+                                        : colors.textSecondary)
+                                  : colors.statusOffline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           AnimatedSwitcher(
             duration: duration,
             transitionBuilder: (child, animation) => FadeTransition(
@@ -990,9 +1037,14 @@ class _ApplianceTile extends StatelessWidget {
             child: Text(
               device.online ? '${device.watts} W' : '—',
               key: ValueKey('${device.online}_${device.watts}'),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
+              ),
             ),
           ),
+          const SizedBox(width: 4),
           IconButton(
             onPressed: onPower,
             tooltip: 'Control ${device.appliance}',
@@ -1005,8 +1057,8 @@ class _ApplianceTile extends StatelessWidget {
               child: Icon(
                 device.isOn ? Icons.power_settings_new : Icons.power,
                 key: ValueKey(device.isOn),
-                size: 19,
-                color: device.isOn ? SemsColors.forest : SemsColors.muted,
+                size: 22,
+                color: device.isOn ? colors.brandPrimary : colors.textSecondary,
               ),
             ),
           ),

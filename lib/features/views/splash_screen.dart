@@ -9,6 +9,7 @@ import '../../app/routes/routes.dart';
 import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_durations.dart';
 import '../../core/theme/app_theme.dart';
+import '../../shared/widgets/sems_widgets.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -36,105 +37,96 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
-      child: Column(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 112,
-                    height: 112,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SvgPicture.asset(
-                          AppAssets.splashOuterRing,
-                          width: 112,
-                          height: 112,
-                        ),
-                        SvgPicture.asset(
-                          AppAssets.splashInnerRing,
-                          width: 104,
-                          height: 104,
-                        ),
-                        Container(
-                          width: 96,
-                          height: 96,
-                          decoration: BoxDecoration(
-                            color: SemsColors.forest,
-                            borderRadius: BorderRadius.circular(28),
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 112,
+                      height: 112,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SvgPicture.asset(
+                            AppAssets.splashOuterRing,
+                            width: 112,
+                            height: 112,
                           ),
-                          alignment: Alignment.center,
-                          child: SvgPicture.asset(
-                            AppAssets.splashSocket,
-                            width: 46,
-                            height: 46,
+                          SvgPicture.asset(
+                            AppAssets.splashInnerRing,
+                            width: 104,
+                            height: 104,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'SEMS',
-                    style: TextStyle(
-                      fontSize: 34,
-                      height: 40 / 34,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const Text(
-                    'Smart Energy Monitoring Socket',
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 18 / 13,
-                      color: SemsColors.muted,
-                    ),
-                  ),
-                  const SizedBox(height: 56),
-                  SizedBox(
-                    width: 176,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: const LinearProgressIndicator(
-                        value: 0.5,
-                        minHeight: 4,
-                        backgroundColor: Color(0xFFEAF1EE),
-                        color: SemsColors.forest,
+                          Container(
+                            width: 96,
+                            height: 96,
+                            decoration: BoxDecoration(
+                              color: colors.brandPrimary,
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                            alignment: Alignment.center,
+                            child: SvgPicture.asset(
+                              AppAssets.splashSocket,
+                              width: 46,
+                              height: 46,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Signing in…',
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 18 / 13,
-                      color: SemsColors.muted,
+                    const SizedBox(height: 4),
+                    const Text(
+                      'SEMS',
+                      style: TextStyle(
+                        fontSize: 34,
+                        height: 40 / 34,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                ],
+                    Text(
+                      'Smart Energy Monitoring Socket',
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 18 / 13,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 56),
+                    const SizedBox(
+                      width: 176,
+                      child: AppProgressBar(value: 0.5, height: 4),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Signing in…',
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 18 / 13,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const Padding(
-            padding: EdgeInsets.only(bottom: 40),
-            child: Text(
-              'v1.0.0',
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: 'monospace',
-                color: SemsColors.muted,
+            Padding(
+              padding: const EdgeInsets.only(bottom: 40),
+              child: Text(
+                'v1.0.0',
+                style: AppText.mono.copyWith(color: colors.textSecondary),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

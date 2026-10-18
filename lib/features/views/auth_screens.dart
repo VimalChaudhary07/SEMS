@@ -52,26 +52,7 @@ class _SignInScreenState extends State<SignInScreen> {
           ),
           if (previewError != null) ...[
             const SizedBox(height: 14),
-            AppCard(
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.error_outline_rounded,
-                    color: SemsColors.red,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      previewError!,
-                      style: const TextStyle(
-                        color: SemsColors.red,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            AppBanner(tone: StatusTone.fault, title: previewError!),
           ],
           const SizedBox(height: 26),
           Form(
@@ -122,20 +103,12 @@ class _SignInScreenState extends State<SignInScreen> {
               child: const Text('Forgot password?'),
             ),
           ),
-          FilledButton(
-            onPressed: _signIn,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(50),
-            ),
-            child: const Text('Sign in'),
-          ),
+          AppButton(label: 'Sign in', onPressed: _signIn),
           const SizedBox(height: 12),
-          OutlinedButton(
+          AppButton(
+            label: 'Continue as demo user',
+            variant: AppButtonVariant.secondary,
             onPressed: _guest,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(50),
-            ),
-            child: const Text('Continue as demo user'),
           ),
           TextButton(
             onPressed: _choosePreviewError,
@@ -277,16 +250,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
             validator: (v) => v != pass.text ? 'Passwords do not match' : null,
           ),
           const SizedBox(height: 20),
-          FilledButton(
+          AppButton(
+            label: 'Create demo profile',
             onPressed: () {
               if (form.currentState!.validate()) {
                 context.go(AppRoutes.verifyEmail, extra: email.text.trim());
               }
             },
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(50),
-            ),
-            child: const Text('Create demo profile'),
           ),
           const SizedBox(height: 14),
           const AppCard(
@@ -348,13 +318,15 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        FilledButton(
+        AppButton(
+          label: 'Mark verified and continue',
           onPressed: () => context.go(AppRoutes.home),
-          child: const Text('Mark verified and continue'),
         ),
-        OutlinedButton(
+        const SizedBox(height: 10),
+        AppButton(
+          label: 'Resend verification email',
+          variant: AppButtonVariant.secondary,
           onPressed: () => setState(() => resent = true),
-          child: const Text('Resend verification email'),
         ),
         if (resent)
           const Padding(
@@ -417,16 +389,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       : null,
                 ),
                 const SizedBox(height: 16),
-                FilledButton(
+                AppButton(
+                  label: 'Send reset link',
                   onPressed: () {
                     if (form.currentState!.validate()) {
                       setState(() => sent = true);
                     }
                   },
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                  ),
-                  child: const Text('Send reset link'),
                 ),
               ],
             ),

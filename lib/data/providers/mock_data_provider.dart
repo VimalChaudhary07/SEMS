@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/config/app_config.dart';
 import '../local/mock_database.dart';
 import '../mock/mock_data_store.dart';
 import '../mock/drift_sems_repository.dart';
@@ -28,6 +29,11 @@ final mockRepositoriesProvider = FutureProvider<MockRepositories>((ref) async {
 });
 
 final semsRepositoryProvider = FutureProvider<SemsRepository>((ref) async {
-  final repositories = await ref.watch(mockRepositoriesProvider.future);
-  return DriftSemsRepository.load(repositories: repositories);
+  if (AppConfig.useMockData) {
+    final repositories = await ref.watch(mockRepositoriesProvider.future);
+    return DriftSemsRepository.load(repositories: repositories);
+  }
+  throw UnsupportedError(
+    'Production backend is not yet active. Set AppConfig.useMockData to true in lib/core/config/app_config.dart.',
+  );
 });

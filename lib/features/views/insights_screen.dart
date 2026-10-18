@@ -54,42 +54,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          const AppCard(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.auto_awesome_rounded,
-                  color: Color(0xFF7955D9),
-                  size: 18,
-                ),
-                SizedBox(width: 9),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Estimated, not measured',
-                        style: TextStyle(
-                          color: Color(0xFF6247B8),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Calculated privately on this phone from sample readings. No data leaves the device.',
-                        style: TextStyle(
-                          color: SemsColors.muted,
-                          fontSize: 11,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          const AppBanner(
+            tone: StatusTone.ai,
+            title: 'Estimated, not measured',
+            body: 'Calculated privately on this phone from sample readings. No data leaves the device.',
           ),
           const SizedBox(height: 10),
           AppCard(
@@ -122,12 +90,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                   ],
                 ),
                 const SizedBox(height: 5),
-                LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 5,
-                  borderRadius: BorderRadius.circular(6),
-                  color: const Color(0xFF7955D9),
-                ),
+                AppProgressBar(value: progress, tone: 'ai', height: 5),
                 const SizedBox(height: 6),
                 Text(
                   '$dataDays days · $quality · ${dataDays >= 5 ? 'Enough history for a local estimate.' : 'Learning your usage baseline.'}',
@@ -158,7 +121,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                         ),
                       ),
                     ),
-                    _EstimatePill(),
+                    EstimatedBadge(),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -237,7 +200,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                         ),
                       ),
                     ),
-                    _EstimatePill(),
+                    EstimatedBadge(),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -340,7 +303,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                     ],
                   ),
                 ),
-                _EstimatePill(),
+                EstimatedBadge(),
               ],
             ),
           ),
@@ -378,35 +341,15 @@ class _InsightsScreenState extends State<InsightsScreen> {
                   style: const TextStyle(color: SemsColors.muted, height: 1.5),
                 ),
                 const SizedBox(height: 18),
-                FilledButton(
+                AppButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Done'),
+                  label: 'Done',
                 ),
               ],
             ),
           ),
         ),
       );
-}
-
-class _EstimatePill extends StatelessWidget {
-  const _EstimatePill();
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-    decoration: BoxDecoration(
-      color: const Color(0xFFF0ECFF),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: const Text(
-      '✦ Estimated',
-      style: TextStyle(
-        color: Color(0xFF6247B8),
-        fontSize: 9,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-  );
 }
 
 class _PeakPeriod extends StatelessWidget {

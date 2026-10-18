@@ -115,7 +115,7 @@ class AppShellState extends ConsumerState<AppShell> {
           ),
         ],
       ),
-      backgroundColor: SemsColors.canvas,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     );
   }
 }
@@ -126,13 +126,16 @@ class _NavIcon extends StatelessWidget {
   final bool selected;
 
   @override
-  Widget build(BuildContext context) => SvgPicture.asset(
-    asset,
-    width: 22,
-    height: 22,
-    colorFilter: ColorFilter.mode(
-      selected ? SemsColors.forest : SemsColors.muted,
-      BlendMode.srcIn,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>() ?? AppColors.light;
+    return SvgPicture.asset(
+      asset,
+      width: 22,
+      height: 22,
+      colorFilter: ColorFilter.mode(
+        selected ? colors.brandPrimary : colors.textSecondary,
+        BlendMode.srcIn,
+      ),
+    );
+  }
 }

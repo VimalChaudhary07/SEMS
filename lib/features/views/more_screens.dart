@@ -97,12 +97,7 @@ class _BillsScreenState extends State<BillsScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                LinearProgressIndicator(
-                  value: budgetProgress,
-                  minHeight: 8,
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  backgroundColor: SemsColors.mint,
-                ),
+                AppProgressBar(value: budgetProgress, height: 8),
                 const SizedBox(height: 8),
                 Text(
                   '${(budgetProgress * 100).round()}% of budget used (Estimated). '
@@ -137,10 +132,11 @@ class _BillsScreenState extends State<BillsScreen> {
           const SizedBox(height: 10),
           _TariffSummary(tariff: repository.tariff),
           const SizedBox(height: 16),
-          OutlinedButton.icon(
+          AppButton(
+            variant: AppButtonVariant.secondary,
             onPressed: () => _openTariffEditor(context, repository),
-            icon: const Icon(Icons.edit_outlined),
-            label: const Text('Edit billing settings'),
+            leadingIcon: Icons.edit_outlined,
+            label: 'Edit billing settings',
           ),
         ],
       ),
@@ -290,7 +286,7 @@ class _BillsScreenState extends State<BillsScreen> {
                   validator: _nonNegative,
                 ),
                 const SizedBox(height: 12),
-                FilledButton(
+                AppButton(
                   onPressed: () {
                     if (!form.currentState!.validate()) return;
                     Navigator.pop(
@@ -318,7 +314,7 @@ class _BillsScreenState extends State<BillsScreen> {
                       ),
                     );
                   },
-                  child: const Text('Save settings'),
+                  label: 'Save settings',
                 ),
               ],
             ),
@@ -399,15 +395,18 @@ class _BillingLegend extends StatelessWidget {
   const _BillingLegend();
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: 12,
-    runSpacing: 6,
-    children: const [
-      _LegendItem('Measured', Colors.white, dashed: false),
-      _LegendItem('Estimated', Colors.white, dashed: true),
-      _LegendItem('Billed', SemsColors.mint, dashed: false),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return Wrap(
+      spacing: 12,
+      runSpacing: 6,
+      children: [
+        _LegendItem('Measured', colors.card, dashed: false),
+        _LegendItem('Estimated', colors.card, dashed: true),
+        _LegendItem('Billed', colors.brandTint, dashed: false),
+      ],
+    );
+  }
 }
 
 class _LegendItem extends StatelessWidget {
@@ -473,43 +472,57 @@ class _BillingMetric extends StatelessWidget {
   final bool estimated;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      border: Border.all(color: estimated ? SemsColors.muted : SemsColors.line),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            if (estimated) ...[
-              const Text('✦', style: TextStyle(color: SemsColors.muted)),
-              const SizedBox(width: 4),
-            ],
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(color: SemsColors.muted, fontSize: 12),
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    final cardContent = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.card,
+        border: Border.all(
+          color: estimated ? Colors.transparent : colors.border,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (estimated) ...[
+                const EstimatedBadge(),
+                const SizedBox(width: 6),
+              ],
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          note,
-          style: const TextStyle(color: SemsColors.muted, fontSize: 11),
-        ),
-      ],
-    ),
-  );
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            note,
+            style: TextStyle(color: colors.textSecondary, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+
+    if (estimated) {
+      return DashedOutline(
+        color: colors.border,
+        radius: 12,
+        child: cardContent,
+      );
+    }
+    return cardContent;
+  }
 }
 
 class _BilledMetric extends StatelessWidget {
@@ -517,34 +530,47 @@ class _BilledMetric extends StatelessWidget {
   final BillRecord record;
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: SemsColors.mint,
-      border: Border.all(color: SemsColors.line),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '▣  Billed · ${record.period}',
-          style: const TextStyle(color: SemsColors.muted, fontSize: 12),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          '₹${record.amount.toStringAsFixed(0)}',
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        ),
-        Text(
-          'Billed · ${record.energyKwh.toStringAsFixed(0)} kWh · '
-          'effective rate ₹${(record.effectiveRate ?? record.amount / record.energyKwh).toStringAsFixed(2)} per kWh',
-          style: const TextStyle(color: SemsColors.muted, fontSize: 11),
-        ),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.brandTint,
+        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const StatusBadge(
+                label: 'Billed',
+                tone: StatusTone.brand,
+                compact: true,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                record.period,
+                style: TextStyle(color: colors.textSecondary, fontSize: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '₹${record.amount.toStringAsFixed(0)}',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          ),
+          Text(
+            'Billed · ${record.energyKwh.toStringAsFixed(0)} kWh · '
+            'effective rate ₹${(record.effectiveRate ?? record.amount / record.energyKwh).toStringAsFixed(2)} per kWh',
+            style: TextStyle(color: colors.textSecondary, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _LastBillComparison extends StatelessWidget {
@@ -859,7 +885,7 @@ class _BillRecordsScreenState extends State<BillRecordsScreen> {
                 validator: _positive,
               ),
               const SizedBox(height: 14),
-              FilledButton(
+              AppButton(
                 onPressed: () {
                   if (form.currentState!.validate()) {
                     Navigator.pop(context, (
@@ -873,10 +899,7 @@ class _BillRecordsScreenState extends State<BillRecordsScreen> {
                     ));
                   }
                 },
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                ),
-                child: const Text('Save bill'),
+                label: 'Save bill',
               ),
             ],
           ),
@@ -978,13 +1001,10 @@ class _DeviceSetupScreenState extends State<DeviceSetupScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                FilledButton.icon(
+                AppButton(
                   onPressed: scanning ? null : _simulateScan,
-                  icon: const Icon(Icons.center_focus_strong_rounded),
-                  label: Text(scanning ? 'Scanning…' : 'Simulate QR scan'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                  ),
+                  leadingIcon: Icons.center_focus_strong_rounded,
+                  label: scanning ? 'Scanning…' : 'Simulate QR scan',
                 ),
                 TextButton(
                   onPressed: () => setState(() => step = 1),
@@ -1057,13 +1077,7 @@ class _DeviceSetupScreenState extends State<DeviceSetupScreen> {
                   validator: _required,
                 ),
                 const SizedBox(height: 18),
-                FilledButton(
-                  onPressed: _finish,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                  ),
-                  child: const Text('Add to my devices'),
-                ),
+                AppButton(onPressed: _finish, label: 'Add to my devices'),
                 TextButton(
                   onPressed: () => setState(() => step = 0),
                   child: const Text('Back'),
@@ -1148,18 +1162,19 @@ class _BackupScreenState extends State<BackupScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        FilledButton.icon(
+        AppButton(
           onPressed: () => setState(
             () => lastAction = 'Backup prepared locally for this preview.',
           ),
-          icon: const Icon(Icons.backup_outlined),
-          label: const Text('Create a backup'),
+          leadingIcon: Icons.backup_outlined,
+          label: 'Create a backup',
         ),
         const SizedBox(height: 10),
-        OutlinedButton.icon(
+        AppButton(
+          variant: AppButtonVariant.secondary,
           onPressed: () => _restore(context),
-          icon: const Icon(Icons.restore_rounded),
-          label: const Text('Restore from backup'),
+          leadingIcon: Icons.restore_rounded,
+          label: 'Restore from backup',
         ),
         if (lastAction != null) ...[
           const SizedBox(height: 14),
@@ -1189,9 +1204,10 @@ class _BackupScreenState extends State<BackupScreen> {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          AppButton(
+            fullWidth: false,
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Continue'),
+            label: 'Continue',
           ),
         ],
       ),

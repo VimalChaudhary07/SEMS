@@ -120,23 +120,11 @@ class _ControlScreenState extends State<ControlScreen>
         padding: const EdgeInsets.all(20),
         children: [
           if (safetyTrip)
-            const AppCard(
-              child: Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded, color: SemsColors.red),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Safety trip: the sample socket blocked ON control after an over-current event.',
-                      style: TextStyle(
-                        color: SemsColors.red,
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            const AppBanner(
+              tone: StatusTone.fault,
+              icon: Icons.warning_amber_rounded,
+              title: 'Safety trip',
+              body: 'The sample socket blocked ON control after an over-current event.',
             ),
           AppCard(
             padding: const EdgeInsets.fromLTRB(16, 28, 16, 20),
@@ -471,10 +459,11 @@ class _ControlScreenState extends State<ControlScreen>
               onPressed: () => Navigator.pop(context, false),
               child: const Text('Cancel'),
             ),
-            FilledButton(
+            AppButton(
+              fullWidth: false,
+              variant: AppButtonVariant.danger,
               onPressed: () => Navigator.pop(context, true),
-              style: FilledButton.styleFrom(backgroundColor: SemsColors.red),
-              child: const Text('Send OFF'),
+              label: 'Send OFF',
             ),
           ],
         ),
