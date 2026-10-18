@@ -64,4 +64,8 @@ abstract final class AppAssets {
   static const iconMail = 'assets/figma/icons/mail.svg';
   static const iconLock = 'assets/figma/icons/lock.svg';
   static const iconClose = 'assets/figma/icons/close_x.svg';
+  static const iconQr = 'assets/figma/icons/qr.svg';
+  static const iconKey = 'assets/figma/icons/key.svg';
+  static const iconRefresh = 'assets/figma/icons/refresh.svg';
+  static const iconSwap = 'assets/figma/icons/swap.svg';
 }

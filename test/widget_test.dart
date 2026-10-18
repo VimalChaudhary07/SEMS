@@ -60,8 +60,8 @@ void main() {
     await tester.tap(find.text('Create account'));
     await tester.pumpAndSettle();
 
-    expect(find.text('demo@sems.app'), findsOneWidget);
-    expect(find.text('Verify email'), findsOneWidget);
+    expect(find.textContaining('demo@sems.app'), findsOneWidget);
+    expect(find.text('Verify your email'), findsOneWidget);
   });
 
   testWidgets('dashboard shows its empty socket state', (tester) async {
@@ -519,19 +519,19 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Add socket'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Simulate QR scan'));
+    await tester.tap(find.text('Scan sample QR'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 800));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Confirm socket').last);
+    await tester.tap(find.text('Yes, continue'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Continue'));
+    await tester.tap(find.text('Got it'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).at(0), 'DemoNet');
     await tester.enterText(find.byType(TextFormField).at(1), 'password123');
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Indicator is blinking'));
+    await tester.tap(find.text('The screen shows "Pairing"'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 2200));
     await tester.pumpAndSettle();

@@ -948,71 +948,156 @@ class VerifyEmailScreen extends StatefulWidget {
 }
 
 class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
-  bool resent = false;
+  final int _secondsLeft = 30;
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Verify email')),
-    body: ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const PageHeading(
-          title: 'Check your inbox',
-          subtitle: 'Email verification · local demo',
-        ),
-        const SizedBox(height: 16),
-        AppCard(
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F7F6),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 64, 24, 24),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.mark_email_read_outlined,
-                color: SemsColors.forest,
-                size: 48,
+              // Mail Icon Tile (80x80, radius 24px, #DDF4EA)
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDDF4EA),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                alignment: Alignment.center,
+                child: SvgPicture.asset(
+                  AppAssets.iconMail,
+                  width: 36,
+                  height: 36,
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFF0E9F6E),
+                    BlendMode.srcIn,
+                  ),
+                ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                widget.email,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+              const SizedBox(height: 24),
+
+              // Headline
+              const Text(
+                'Verify your email',
+                style: TextStyle(
+                  fontFamily: AppText.family,
+                  fontSize: 28,
+                  height: 36 / 28,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F1714),
+                ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'No email is sent by this preview. Use the controls below to explore the verification flow.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: SemsColors.muted,
-                  fontSize: 12,
-                  height: 1.45,
+
+              // Description
+              Text(
+                'We sent a verification link to ${widget.email}. Open it, then come back here.',
+                style: const TextStyle(
+                  fontFamily: AppText.family,
+                  fontSize: 15,
+                  height: 24 / 15,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF55625D),
                 ),
+              ),
+              const SizedBox(height: 32),
+
+              // Action Buttons
+              Column(
+                children: [
+                  // Primary Button ("I have verified")
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF0E9F6E),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        textStyle: const TextStyle(
+                          fontFamily: AppText.family,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onPressed: () => context.go(AppRoutes.home),
+                      child: const Text('I have verified'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Tonal Button (Disabled/Timer: "Resend in 30s")
+                  Opacity(
+                    opacity: 0.45,
+                    child: Container(
+                      width: double.infinity,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAF1EE),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        _secondsLeft > 0
+                            ? 'Resend in ${_secondsLeft}s'
+                            : 'Resend email',
+                        style: const TextStyle(
+                          fontFamily: AppText.family,
+                          fontSize: 15,
+                          height: 20 / 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0F1714),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Text Button ("Use a different email")
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF0E9F6E),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        textStyle: const TextStyle(
+                          fontFamily: AppText.family,
+                          fontSize: 15,
+                          height: 20 / 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go(AppRoutes.signIn);
+                        }
+                      },
+                      child: const Text('Use a different email'),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 14),
-        AppButton(
-          label: 'Mark verified and continue',
-          onPressed: () => context.go(AppRoutes.home),
-        ),
-        const SizedBox(height: 10),
-        AppButton(
-          label: 'Resend verification email',
-          variant: AppButtonVariant.secondary,
-          onPressed: () => setState(() => resent = true),
-        ),
-        if (resent)
-          const Padding(
-            padding: EdgeInsets.all(8),
-            child: Text(
-              'Demo: verification email resend requested. No email was sent.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: SemsColors.muted, fontSize: 12),
-            ),
-          ),
-        TextButton(
-          onPressed: () => context.go(AppRoutes.home),
-          child: const Text('Continue without verifying'),
-        ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }
 
 Future<void> showForgotPasswordSheet(
@@ -1236,8 +1321,11 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
                 style: FilledButton.styleFrom(
                   backgroundColor: canSubmit
                       ? const Color(0xFF0E9F6E)
-                      : const Color(0xFF0E9F6E).withOpacity(0.45),
+                      : const Color.fromRGBO(14, 159, 110, 0.45),
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      const Color.fromRGBO(14, 159, 110, 0.45),
+                  disabledForegroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
