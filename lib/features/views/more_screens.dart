@@ -25,146 +25,136 @@ class _BillsScreenState extends State<BillsScreen> {
     _repository = widget.repository ?? MockSemsRepository();
   }
 
-  int period = 0;
   @override
   Widget build(BuildContext context) {
     final repository = _repository;
     final tariff = _toTariff(repository.tariff);
-    final readings = repository.monthlyReadings.fold<double>(
-      0,
-      (sum, reading) => sum + reading.kwh,
-    );
-    final energy = readings > 0 ? readings : 117.5;
+    final energy = 168.4;
     final estimate = estimateBill(energyKwh: energy, tariff: tariff);
-    final previous = repository.bills.length > 1 ? repository.bills[1] : null;
+    final previous = repository.bills.isEmpty ? null : repository.bills.first;
     final amount = _money(estimate.total);
     final budgetProgress = tariff.budget == 0
         ? 0.0
         : (estimate.total / tariff.budget).clamp(0.0, 1.0);
     return Scaffold(
-      appBar: AppBar(title: const Text('Billing settings')),
+      appBar: AppBar(
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Billing settings'),
+            Text(
+              'Example data',
+              style: TextStyle(fontSize: 12, color: SemsColors.muted),
+            ),
+          ],
+        ),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          const PageHeading(
-            title: 'Your energy bill',
-            subtitle: 'Measured, estimated, and billed locally',
-          ),
-          const SizedBox(height: 18),
-          SegmentedButton<int>(
-            segments: const [
-              ButtonSegment(value: 0, label: Text('This month')),
-              ButtonSegment(value: 1, label: Text('Last month')),
-              ButtonSegment(value: 2, label: Text('2 months ago')),
-            ],
-            selected: {period},
-            onSelectionChanged: (v) => setState(() => period = v.first),
-          ),
+          const _BillingLegend(),
           const SizedBox(height: 16),
+          const _BillingSectionLabel('Current period'),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _BillingMetric(
+                  label: 'Measured energy',
+                  value: '${energy.toStringAsFixed(1)} kWh',
+                  note: 'Measured, so far this period',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _BillingMetric(
+                  label: 'Estimated bill',
+                  value: amount,
+                  note: 'Estimated, if usage stops today',
+                  estimated: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'ESTIMATED TOTAL',
-                  style: TextStyle(
-                    color: SemsColors.muted,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 11,
-                    letterSpacing: 1,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Monthly budget (Estimated vs budget)',
+                        style: TextStyle(color: SemsColors.muted),
+                      ),
+                    ),
+                    Text(
+                      '$amount / ${_money(tariff.budget)}',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  amount,
-                  style: const TextStyle(
-                    fontSize: 38,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Estimated from ${energy.toStringAsFixed(1)} kWh using progressive slabs',
-                  style: TextStyle(color: SemsColors.muted, fontSize: 12),
-                ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 8),
                 LinearProgressIndicator(
                   value: budgetProgress,
                   minHeight: 8,
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
                   backgroundColor: SemsColors.mint,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${(budgetProgress * 100).round()}% of your ${_money(tariff.budget)} monthly budget',
-                  style: TextStyle(color: SemsColors.muted, fontSize: 11),
+                  '${(budgetProgress * 100).round()}% of budget used (Estimated). '
+                  'Budget alerts come at 80% and 100%.',
+                  style: const TextStyle(color: SemsColors.muted, fontSize: 12),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          const SectionTitle('Current period'),
-          const SizedBox(height: 10),
-          _BillRow(
-            label: 'Measured',
-            value: '${energy.toStringAsFixed(1)} kWh',
-          ),
-          _BillRow(label: 'Estimated', value: amount),
-          _BillRow(
-            label: 'Billed',
-            value: previous == null ? 'Not recorded' : _money(previous.amount),
-          ),
-          const Divider(height: 24),
-          _BillRow(label: 'Estimated total', value: amount, bold: true),
-          if (previous != null)
-            _BillRow(
-              label: 'Last bill vs estimate',
-              value: '${_money(previous.amount)} vs $amount',
-            ),
           const SizedBox(height: 16),
+          const _BillingSectionLabel('Last bill'),
+          const SizedBox(height: 10),
+          if (previous != null) ...[
+            _BilledMetric(record: previous),
+            const SizedBox(height: 8),
+            _LastBillComparison(record: previous, estimate: estimate.total),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Expanded(child: _BillingSectionLabel('Bill records')),
+              TextButton(
+                onPressed: () => _openBillRecords(context),
+                child: const Text('Add bill'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          _InlineBillRecords(records: repository.bills),
+          const SizedBox(height: 16),
+          const _BillingSectionLabel('Tariff'),
+          const SizedBox(height: 10),
           _TariffSummary(tariff: repository.tariff),
           const SizedBox(height: 16),
-          FilledButton.icon(
+          OutlinedButton.icon(
             onPressed: () => _openTariffEditor(context, repository),
             icon: const Icon(Icons.edit_outlined),
             label: const Text('Edit billing settings'),
           ),
-          const SizedBox(height: 10),
-          OutlinedButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => BillRecordsScreen(repository: repository),
-              ),
-            ),
-            icon: const Icon(Icons.receipt_long_outlined),
-            label: const Text('View bill records'),
-          ),
-          const SizedBox(height: 16),
-          AppCard(
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.info_outline_rounded,
-                  color: SemsColors.forest,
-                ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    'This is an illustrative estimate using sample readings and a sample tariff. It is not a utility bill.',
-                    style: TextStyle(
-                      color: SemsColors.muted,
-                      fontSize: 12,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
+  }
+
+  Future<void> _openBillRecords(BuildContext context) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => BillRecordsScreen(repository: _repository),
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   Future<void> _openTariffEditor(
@@ -180,6 +170,21 @@ class _BillsScreenState extends State<BillsScreen> {
     final duty = TextEditingController(
       text: repository.tariff.dutyPercent.toStringAsFixed(1),
     );
+    final firstRate = TextEditingController(
+      text:
+          repository.tariff.slabs.elementAtOrNull(0)?.rate.toStringAsFixed(2) ??
+          '6.00',
+    );
+    final secondRate = TextEditingController(
+      text:
+          repository.tariff.slabs.elementAtOrNull(1)?.rate.toStringAsFixed(2) ??
+          '8.00',
+    );
+    final thirdRate = TextEditingController(
+      text:
+          repository.tariff.slabs.elementAtOrNull(2)?.rate.toStringAsFixed(2) ??
+          '9.50',
+    );
     final form = GlobalKey<FormState>();
     final result = await showModalBottomSheet<TariffRecord>(
       context: context,
@@ -192,61 +197,131 @@ class _BillsScreenState extends State<BillsScreen> {
           20,
           MediaQuery.viewInsetsOf(context).bottom + 20,
         ),
-        child: Form(
-          key: form,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Edit billing settings',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        child: SingleChildScrollView(
+          child: Form(
+            key: form,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Edit billing settings',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  ),
                 ),
-              ),
-              TextFormField(
-                controller: budget,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Monthly budget',
-                  prefixText: '₹ ',
+                TextFormField(
+                  controller: budget,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Monthly budget',
+                    prefixText: '₹ ',
+                  ),
+                  validator: _positive,
                 ),
-                validator: _positive,
-              ),
-              TextFormField(
-                controller: fixed,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Fixed charge',
-                  prefixText: '₹ ',
-                ),
-                validator: _nonNegative,
-              ),
-              TextFormField(
-                controller: duty,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Duty / tax',
-                  suffixText: '%',
-                ),
-                validator: _nonNegative,
-              ),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: () {
-                  if (!form.currentState!.validate()) return;
-                  Navigator.pop(
-                    context,
-                    repository.tariff.copyWith(
-                      budget: double.parse(budget.text),
-                      fixedCharge: double.parse(fixed.text),
-                      dutyPercent: double.parse(duty.text),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: Text(
+                      'Progressive slabs',
+                      style: TextStyle(fontWeight: FontWeight.w700),
                     ),
-                  );
-                },
-                child: const Text('Save settings'),
-              ),
-            ],
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: firstRate,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: '0–100 kWh',
+                          prefixText: '₹ ',
+                        ),
+                        validator: _nonNegative,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        controller: secondRate,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: '100–200 kWh',
+                          prefixText: '₹ ',
+                        ),
+                        validator: _nonNegative,
+                      ),
+                    ),
+                  ],
+                ),
+                TextFormField(
+                  controller: thirdRate,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Above 200 kWh',
+                    prefixText: '₹ ',
+                  ),
+                  validator: _nonNegative,
+                ),
+                TextFormField(
+                  controller: fixed,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Fixed charge',
+                    prefixText: '₹ ',
+                  ),
+                  validator: _nonNegative,
+                ),
+                TextFormField(
+                  controller: duty,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Duty / tax',
+                    suffixText: '%',
+                  ),
+                  validator: _nonNegative,
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () {
+                    if (!form.currentState!.validate()) return;
+                    Navigator.pop(
+                      context,
+                      repository.tariff.copyWith(
+                        budget: double.parse(budget.text),
+                        fixedCharge: double.parse(fixed.text),
+                        dutyPercent: double.parse(duty.text),
+                        slabs: [
+                          TariffSlabRecord(
+                            fromKwh: 0,
+                            toKwh: 100,
+                            rate: double.parse(firstRate.text),
+                          ),
+                          TariffSlabRecord(
+                            fromKwh: 100,
+                            toKwh: 200,
+                            rate: double.parse(secondRate.text),
+                          ),
+                          TariffSlabRecord(
+                            fromKwh: 200,
+                            rate: double.parse(thirdRate.text),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  child: const Text('Save settings'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -254,6 +329,9 @@ class _BillsScreenState extends State<BillsScreen> {
     budget.dispose();
     fixed.dispose();
     duty.dispose();
+    firstRate.dispose();
+    secondRate.dispose();
+    thirdRate.dispose();
     if (result != null && mounted) {
       await repository.saveTariff(result);
       setState(() {});
@@ -312,6 +390,276 @@ class _TariffSummary extends StatelessWidget {
           value: '${tariff.billingDay} of the month',
         ),
         _BillRow(label: 'Currency', value: tariff.currency),
+      ],
+    ),
+  );
+}
+
+class _BillingLegend extends StatelessWidget {
+  const _BillingLegend();
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: 12,
+    runSpacing: 6,
+    children: const [
+      _LegendItem('Measured', Colors.white, dashed: false),
+      _LegendItem('Estimated', Colors.white, dashed: true),
+      _LegendItem('Billed', SemsColors.mint, dashed: false),
+    ],
+  );
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem(this.label, this.color, {required this.dashed});
+  final String label;
+  final Color color;
+  final bool dashed;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 12,
+        height: 12,
+        decoration: BoxDecoration(
+          color: color,
+          border: Border.all(
+            color: dashed ? SemsColors.muted : SemsColors.line,
+            style: dashed ? BorderStyle.solid : BorderStyle.solid,
+          ),
+          borderRadius: BorderRadius.circular(3),
+        ),
+      ),
+      const SizedBox(width: 6),
+      Text(
+        label,
+        style: const TextStyle(color: SemsColors.muted, fontSize: 12),
+      ),
+    ],
+  );
+}
+
+class _BillingSectionLabel extends StatelessWidget {
+  const _BillingSectionLabel(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 4),
+    child: Text(
+      label.toUpperCase(),
+      style: const TextStyle(
+        color: SemsColors.muted,
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        letterSpacing: .8,
+      ),
+    ),
+  );
+}
+
+class _BillingMetric extends StatelessWidget {
+  const _BillingMetric({
+    required this.label,
+    required this.value,
+    required this.note,
+    this.estimated = false,
+  });
+  final String label;
+  final String value;
+  final String note;
+  final bool estimated;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: estimated ? SemsColors.muted : SemsColors.line),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            if (estimated) ...[
+              const Text('✦', style: TextStyle(color: SemsColors.muted)),
+              const SizedBox(width: 4),
+            ],
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(color: SemsColors.muted, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          note,
+          style: const TextStyle(color: SemsColors.muted, fontSize: 11),
+        ),
+      ],
+    ),
+  );
+}
+
+class _BilledMetric extends StatelessWidget {
+  const _BilledMetric({required this.record});
+  final BillRecord record;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: SemsColors.mint,
+      border: Border.all(color: SemsColors.line),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '▣  Billed · ${record.period}',
+          style: const TextStyle(color: SemsColors.muted, fontSize: 12),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          '₹${record.amount.toStringAsFixed(0)}',
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        ),
+        Text(
+          'Billed · ${record.energyKwh.toStringAsFixed(0)} kWh · '
+          'effective rate ₹${(record.effectiveRate ?? record.amount / record.energyKwh).toStringAsFixed(2)} per kWh',
+          style: const TextStyle(color: SemsColors.muted, fontSize: 11),
+        ),
+      ],
+    ),
+  );
+}
+
+class _LastBillComparison extends StatelessWidget {
+  const _LastBillComparison({required this.record, required this.estimate});
+  final BillRecord record;
+  final double estimate;
+
+  @override
+  Widget build(BuildContext context) {
+    final difference = estimate - record.amount;
+    return AppCard(
+      child: Column(
+        children: [
+          _BillRow(
+            label: 'Estimated for ${record.energyKwh.toStringAsFixed(0)} kWh',
+            value: '₹${estimate.toStringAsFixed(0)}',
+          ),
+          _BillRow(
+            label: 'Billed amount',
+            value: '₹${record.amount.toStringAsFixed(0)}',
+          ),
+          const Divider(height: 12),
+          _BillRow(
+            label: 'Estimated vs Billed',
+            value:
+                '${difference >= 0 ? '+' : ''}₹${difference.toStringAsFixed(0)}',
+            bold: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InlineBillRecords extends StatelessWidget {
+  const _InlineBillRecords({required this.records});
+  final List<BillRecord> records;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: EdgeInsets.zero,
+    child: Column(
+      children: [
+        for (var i = 0; i < records.length; i++) ...[
+          _InlineBillRecord(record: records[i]),
+          if (i < records.length - 1) const Divider(height: 1, indent: 64),
+        ],
+      ],
+    ),
+  );
+}
+
+class _InlineBillRecord extends StatelessWidget {
+  const _InlineBillRecord({required this.record});
+  final BillRecord record;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    child: Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: SemsColors.mint,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(
+            Icons.receipt_long_outlined,
+            size: 19,
+            color: SemsColors.muted,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                record.period,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '${record.energyKwh.toStringAsFixed(0)} kWh · '
+                '₹${(record.effectiveRate ?? record.amount / record.energyKwh).toStringAsFixed(2)}/kWh billed rate',
+                style: const TextStyle(color: SemsColors.muted, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '₹${record.amount.toStringAsFixed(0)}',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            Container(
+              margin: const EdgeInsets.only(top: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: SemsColors.mint,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: const Text(
+                'Billed',
+                style: TextStyle(color: SemsColors.muted, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
       ],
     ),
   );
