@@ -68,4 +68,9 @@ abstract final class AppAssets {
   static const iconKey = 'assets/figma/icons/key.svg';
   static const iconRefresh = 'assets/figma/icons/refresh.svg';
   static const iconSwap = 'assets/figma/icons/swap.svg';
+  static const iconDroplet = 'assets/figma/icons/droplet.svg';
+  static const iconSnow = 'assets/figma/icons/snow.svg';
+  static const iconBulb = 'assets/figma/icons/bulb.svg';
+  static const iconTv = 'assets/figma/icons/tv.svg';
+  static const iconPause = 'assets/figma/icons/pause.svg';
 }

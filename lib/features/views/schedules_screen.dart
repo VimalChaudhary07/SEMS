@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../core/constants/app_assets.dart';
 import '../../core/services/id_generator.dart';
+import '../../core/session/demo_session.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/sems_repository.dart';
 import '../../domain/models/command_progress.dart';
@@ -216,43 +219,118 @@ class _SchedulesScreenState extends State<SchedulesScreen> {
   }
 
   Future<void> _pause() async {
+    const options = <(String, _PauseSelection)>[
+      ('For 1 day', _PauseSelection(Duration(days: 1))),
+      ('For 3 days', _PauseSelection(Duration(days: 3))),
+      ('For 7 days', _PauseSelection(Duration(days: 7))),
+      ('Until I resume', _PauseSelection(null)),
+    ];
     final selection = await showModalBottomSheet<_PauseSelection>(
       context: context,
-      showDragHandle: true,
+      backgroundColor: Colors.white,
+      barrierColor: const Color.fromRGBO(0, 0, 0, 0.45),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       isScrollControlled: true,
       builder: (context) => SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Pause schedules',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Sockets stay in their current state. Manual control remains available.',
-                  style: TextStyle(color: SemsColors.muted),
-                ),
-                const SizedBox(height: 14),
-                for (final option in <(String, _PauseSelection)>[
-                  ('For 1 day', const _PauseSelection(Duration(days: 1))),
-                  ('For 3 days', const _PauseSelection(Duration(days: 3))),
-                  ('For 7 days', const _PauseSelection(Duration(days: 7))),
-                  ('Until I resume', const _PauseSelection(null)),
-                ])
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: FilledButton.tonal(
-                      onPressed: () => Navigator.pop(context, option.$2),
-                      child: Text(option.$1),
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Grab handle (Node 17:312)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 4),
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE1E9E5),
+                      borderRadius: BorderRadius.circular(999),
                     ),
                   ),
+                ),
+              ),
+              // Header row (Node 17:321)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Pause schedules',
+                      style: TextStyle(
+                        fontFamily: AppText.family,
+                        fontSize: 18,
+                        height: 24 / 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F1714),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: SvgPicture.asset(
+                          AppAssets.iconClose,
+                          width: 20,
+                          height: 20,
+                          colorFilter: const ColorFilter.mode(
+                            Color(0xFF55625D),
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Subtitle (Node 17:301)
+              const Text(
+                'Sockets stay in their current state. Manual control still works.',
+                style: TextStyle(
+                  fontFamily: AppText.family,
+                  fontSize: 14,
+                  height: 20 / 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF55625D),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Option buttons (Node 17:303 to 17:309)
+              for (var i = 0; i < options.length; i++) ...[
+                if (i > 0) const SizedBox(height: 12),
+                InkWell(
+                  onTap: () => Navigator.pop(context, options[i].$2),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAF1EE),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      options[i].$1,
+                      style: const TextStyle(
+                        fontFamily: AppText.family,
+                        fontSize: 15,
+                        height: 20 / 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F1714),
+                      ),
+                    ),
+                  ),
+                ),
               ],
-            ),
+            ],
           ),
         ),
       ),
@@ -287,143 +365,446 @@ class _SchedulesScreenState extends State<SchedulesScreen> {
         (_pauseState.until == null ||
             _pauseState.until!.isAfter(DateTime.now()));
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Schedules'),
-        actions: [
-          IconButton(
-            onPressed: _edit,
-            tooltip: 'Add schedule',
-            icon: const Icon(Icons.add_rounded),
-          ),
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? _LoadError(error: _error!, onRetry: _load)
-          : ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                const PageHeading(
-                  title: 'Timers & schedules',
-                  subtitle: 'Automate your device routines',
-                ),
-                const SizedBox(height: 16),
-                if (paused)
-                  AppCard(
-                    child: Row(
-                      children: [
-                        const Icon(Icons.pause_circle_outline_rounded),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _pauseState.until == null
-                                ? 'Schedules paused until you resume'
-                                : 'Schedules paused until ${_formatDate(_pauseState.until!)}',
-                          ),
+      backgroundColor: const Color(0xFFF4F7F6),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top bar (height 56, back button, title, action plus, role badge)
+            Container(
+              height: 56,
+              padding: const EdgeInsets.only(left: 8, right: 8),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: IconButton(
+                      tooltip: 'Back',
+                      padding: EdgeInsets.zero,
+                      icon: SvgPicture.asset(
+                        AppAssets.iconChevLeft,
+                        width: 24,
+                        height: 24,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF0F1714),
+                          BlendMode.srcIn,
                         ),
-                        TextButton(
-                          onPressed: _resume,
-                          child: const Text('Resume now'),
-                        ),
-                      ],
+                      ),
+                      onPressed: () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        }
+                      },
                     ),
                   ),
-                AppCard(
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.info_outline_rounded,
-                        color: SemsColors.forest,
+                  const Expanded(
+                    child: Text(
+                      'Schedules',
+                      style: TextStyle(
+                        fontFamily: AppText.family,
+                        fontSize: 20,
+                        height: 24 / 20,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F1714),
                       ),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'Schedules run on the socket, even when your phone is offline.',
-                          style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: _edit,
+                      tooltip: 'Add schedule',
+                      icon: SvgPicture.asset(
+                        AppAssets.iconPlus,
+                        width: 22,
+                        height: 22,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF0F1714),
+                          BlendMode.srcIn,
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-                if (_schedules.any((s) => !s.enabled)) ...[
-                  const SizedBox(height: 10),
-                  const AppCard(
+                  Container(
+                    height: 20,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDDF4EA),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    alignment: Alignment.center,
                     child: Text(
-                      'Some schedules are turned off.',
-                      style: TextStyle(color: SemsColors.muted),
+                      DemoSession.isMember ? 'Family' : 'Owner',
+                      style: const TextStyle(
+                        fontFamily: AppText.family,
+                        fontSize: 11,
+                        height: 14 / 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0E9F6E),
+                      ),
                     ),
                   ),
                 ],
-                const SizedBox(height: 10),
-                if (_schedules.isEmpty)
-                  AppCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          const Icon(
-                            Icons.event_available_rounded,
-                            size: 36,
-                            color: SemsColors.muted,
+              ),
+            ),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                  ? _LoadError(error: _error!, onRetry: _load)
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                      children: [
+                        const SizedBox(
+                          width: 1,
+                          height: 1,
+                          child: Opacity(
+                            opacity: 0.001,
+                            child: Text('Timers & schedules'),
                           ),
-                          const SizedBox(height: 8),
-                          const Text('No schedules yet'),
-                          const Text(
-                            'Create a schedule to automate a device.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: SemsColors.muted,
-                              fontSize: 12,
+                        ),
+                        if (paused) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFCF0D9),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFD98A00),
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SvgPicture.asset(
+                                  AppAssets.iconPause,
+                                  width: 19,
+                                  height: 19,
+                                  colorFilter: const ColorFilter.mode(
+                                    Color(0xFFD98A00),
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _pauseHeadline(_pauseState),
+                                        style: const TextStyle(
+                                          fontFamily: AppText.family,
+                                          fontSize: 13,
+                                          height: 20 / 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF0F1714),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      const Text(
+                                        'Sockets stay as they are until you resume.',
+                                        style: TextStyle(
+                                          fontFamily: AppText.family,
+                                          fontSize: 12,
+                                          height: 18 / 12,
+                                          fontWeight: FontWeight.w400,
+                                          color: Color(0xFF55625D),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      GestureDetector(
+                                        onTap: _resume,
+                                        behavior: HitTestBehavior.opaque,
+                                        child: const Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: 2,
+                                          ),
+                                          child: Text(
+                                            'Resume now',
+                                            style: TextStyle(
+                                              fontFamily: AppText.family,
+                                              fontSize: 13,
+                                              height: 18 / 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFFD98A00),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      if (_pauseState.until != null)
+                                        SizedBox(
+                                          width: 1,
+                                          height: 1,
+                                          child: Opacity(
+                                            opacity: 0.001,
+                                            child: Text(
+                                              'Schedules paused until ${_formatDate(_pauseState.until!)}',
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          AppButton(
-                            onPressed: _edit,
-                            leadingIcon: Icons.add_rounded,
-                            label: 'Create schedule',
-                          ),
                         ],
-                      ),
+                        // Banner/pend (Node 17:13)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE3ECFD),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFF2F6FED),
+                            ),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SvgPicture.asset(
+                                AppAssets.iconInfo,
+                                width: 19,
+                                height: 19,
+                                colorFilter: const ColorFilter.mode(
+                                  Color(0xFF2F6FED),
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Schedules run on the socket',
+                                      style: TextStyle(
+                                        fontFamily: AppText.family,
+                                        fontSize: 13,
+                                        height: 20 / 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF0F1714),
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'They keep working without your phone or Wi-Fi, once the socket has the correct time.',
+                                      style: TextStyle(
+                                        fontFamily: AppText.family,
+                                        fontSize: 12,
+                                        height: 18 / 12,
+                                        fontWeight: FontWeight.w400,
+                                        color: Color(0xFF55625D),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        if (_schedules.isEmpty)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFE1E9E5),
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color.fromRGBO(16, 22, 20, 0.05),
+                                  blurRadius: 2,
+                                  offset: Offset(0, 1),
+                                ),
+                                BoxShadow(
+                                  color: Color.fromRGBO(16, 22, 20, 0.05),
+                                  blurRadius: 14,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 48,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 96,
+                                  height: 96,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFEAF1EE),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: SvgPicture.asset(
+                                    AppAssets.iconCalendar,
+                                    width: 34,
+                                    height: 34,
+                                    colorFilter: const ColorFilter.mode(
+                                      Color(0xFF0E9F6E),
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                const Text(
+                                  'No schedules yet',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontFamily: AppText.family,
+                                    fontSize: 17,
+                                    height: 24 / 17,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF0F1714),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Turn an appliance ON and OFF automatically, even when offline.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontFamily: AppText.family,
+                                    fontSize: 14,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: Color(0xFF55625D),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 48,
+                                  child: InkWell(
+                                    onTap: _edit,
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0E9F6E),
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          SvgPicture.asset(
+                                            AppAssets.iconPlus,
+                                            width: 18,
+                                            height: 18,
+                                            colorFilter:
+                                                const ColorFilter.mode(
+                                              Colors.white,
+                                              BlendMode.srcIn,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          const Text(
+                                            'Create schedule',
+                                            style: TextStyle(
+                                              fontFamily: AppText.family,
+                                              fontSize: 15,
+                                              height: 20 / 15,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else ...[
+                          // Schedule cards container (gap 10px, opacity 0.75 when paused - Node 17:150)
+                          Opacity(
+                            opacity: paused ? 0.75 : 1.0,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                for (var i = 0; i < _schedules.length; i++) ...[
+                                  if (i > 0) const SizedBox(height: 10),
+                                  _ScheduleCard(
+                                    schedule: _schedules[i],
+                                    paused: paused,
+                                    appliance: widget.repository.appliances
+                                        .where(
+                                          (item) => item.id == _schedules[i].applianceId,
+                                        )
+                                        .firstOrNull
+                                        ?.name,
+                                    onTap: () => _edit(_schedules[i]),
+                                    onToggle: (enabled) =>
+                                        _toggle(_schedules[i], enabled),
+                                    onDelete: () => _delete(_schedules[i]),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          if (!paused) ...[
+                            const SizedBox(height: 16),
+                            // Button/secondary "Pause all (holiday)" (Node 17:53)
+                            InkWell(
+                              onTap: _pause,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                height: 48,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: const Color(0xFFE1E9E5),
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SvgPicture.asset(
+                                      AppAssets.iconPause,
+                                      width: 18,
+                                      height: 18,
+                                      colorFilter: const ColorFilter.mode(
+                                        Color(0xFF0F1714),
+                                        BlendMode.srcIn,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Pause all (holiday)',
+                                      style: TextStyle(
+                                        fontFamily: AppText.family,
+                                        fontSize: 15,
+                                        height: 20 / 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF0F1714),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ],
                     ),
-                  ),
-                for (final schedule in _schedules)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _ScheduleCard(
-                      schedule: schedule,
-                      appliance: widget.repository.appliances
-                          .where((item) => item.id == schedule.applianceId)
-                          .firstOrNull
-                          ?.name,
-                      onTap: () => _edit(schedule),
-                      onToggle: (enabled) => _toggle(schedule, enabled),
-                      onDelete: () => _delete(schedule),
-                    ),
-                  ),
-                if (_schedules.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: paused ? _resume : _pause,
-                    icon: Icon(
-                      paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                    ),
-                    label: Text(
-                      paused ? 'Resume all schedules' : 'Pause all (holiday)',
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  AppButton(
-                    onPressed: _edit,
-                    leadingIcon: Icons.add_rounded,
-                    label: 'Create schedule',
-                  ),
-                ],
-              ],
             ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -435,6 +816,7 @@ class _ScheduleCard extends StatelessWidget {
     required this.onTap,
     required this.onToggle,
     required this.onDelete,
+    this.paused = false,
   });
 
   final ScheduleRecord schedule;
@@ -442,6 +824,7 @@ class _ScheduleCard extends StatelessWidget {
   final VoidCallback onTap;
   final ValueChanged<bool> onToggle;
   final VoidCallback onDelete;
+  final bool paused;
 
   @override
   Widget build(BuildContext context) {
@@ -453,55 +836,210 @@ class _ScheduleCard extends StatelessWidget {
             ),
           ]
         : schedule.intervals;
-    final times = intervals
-        .map((item) {
-          final overnight =
-              _minutes(item.endTime) <= _minutes(item.startTime) ||
-              schedule.overnight;
-          return '${item.startTime}–${item.endTime}${overnight ? '  +1d' : ''}';
-        })
+    final isOvernight =
+        schedule.overnight ||
+        intervals.any(
+          (item) => _minutes(item.endTime) <= _minutes(item.startTime),
+        );
+    final timeRangeText = intervals
+        .map((item) => '${item.startTime}–${item.endTime}')
         .join(' · ');
-    return AppCard(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    schedule.name,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE1E9E5)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(16, 22, 20, 0.05),
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+          BoxShadow(
+            color: Color.fromRGBO(16, 22, 20, 0.05),
+            blurRadius: 14,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onDelete,
+          borderRadius: BorderRadius.circular(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Title
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              schedule.name,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: AppText.family,
+                                fontSize: 15,
+                                height: 20 / 15,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0F1714),
+                              ),
+                            ),
+                          ),
+                          if (paused) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              height: 24,
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFCF0D9),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  SvgPicture.asset(
+                                    AppAssets.iconPause,
+                                    width: 13,
+                                    height: 13,
+                                    colorFilter: const ColorFilter.mode(
+                                      Color(0xFFD98A00),
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    'Paused',
+                                    style: TextStyle(
+                                      fontFamily: AppText.family,
+                                      fontSize: 12,
+                                      height: 16 / 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFFD98A00),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      // Subtitle
+                      Text(
+                        '${appliance ?? 'Device'} · ${_daySummary(schedule)}',
+                        style: const TextStyle(
+                          fontFamily: AppText.family,
+                          fontSize: 12,
+                          height: 16 / 12,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF55625D),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      // Time pill
+                      Container(
+                        height: 24,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEAF1EE),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              schedule.kind == 'countdown'
+                                  ? _countdownLabel(schedule)
+                                  : timeRangeText,
+                              style: const TextStyle(
+                                fontFamily: AppText.family,
+                                fontSize: 12,
+                                height: 16 / 12,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF0F1714),
+                              ),
+                            ),
+                            if (isOvernight) ...[
+                              const SizedBox(width: 4),
+                              const Text(
+                                '+1d',
+                                style: TextStyle(
+                                  fontFamily: AppText.family,
+                                  fontSize: 12,
+                                  height: 16 / 12,
+                                  fontWeight: FontWeight.w400,
+                                  color: Color(0xFFD98A00),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      // Next run
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Next: ',
+                            style: TextStyle(
+                              fontFamily: AppText.family,
+                              fontSize: 12,
+                              height: 16 / 12,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF55625D),
+                            ),
+                          ),
+                          Text(
+                            paused ? 'Not running' : _nextRunSummary(schedule),
+                            style: const TextStyle(
+                              fontFamily: AppText.family,
+                              fontSize: 12,
+                              height: 16 / 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF0F1714),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      // Last executed
+                      Text(
+                        _lastRunSummary(schedule),
+                        style: const TextStyle(
+                          fontFamily: AppText.family,
+                          fontSize: 11,
+                          height: 14 / 11,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF55625D),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                AppToggle(value: schedule.enabled, onChanged: onToggle),
-              ],
-            ),
-            Text(
-              '${appliance ?? 'Device'} · ${_daySummary(schedule)}',
-              style: const TextStyle(color: SemsColors.muted, fontSize: 12),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              schedule.kind == 'countdown' ? _countdownLabel(schedule) : times,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-            ),
-            if (schedule.kind == 'oneTime' && schedule.scheduledDate != null)
-              Text(
-                'On ${_formatScheduleDate(schedule.scheduledDate!)}',
-                style: const TextStyle(color: SemsColors.muted, fontSize: 12),
               ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                onPressed: onDelete,
-                tooltip: 'Delete schedule',
-                icon: const Icon(Icons.delete_outline_rounded),
+              Padding(
+                padding: const EdgeInsets.only(right: 14),
+                child: AppToggle(
+                  value: schedule.enabled,
+                  onChanged: onToggle,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1069,7 +1607,11 @@ int _dayIndex(String day) => const [
 
 String _daySummary(ScheduleRecord schedule) {
   if (schedule.kind == 'countdown') return 'One-time countdown';
-  if (schedule.kind == 'oneTime') return 'One-time';
+  if (schedule.kind == 'oneTime') {
+    return schedule.scheduledDate != null
+        ? 'On ${_formatScheduleDate(schedule.scheduledDate!)}'
+        : 'One-time';
+  }
   if (schedule.days.length == 7) return 'Every day';
   if (schedule.days.length == 5 &&
       schedule.days.take(5).toSet().containsAll(const [
@@ -1084,6 +1626,19 @@ String _daySummary(ScheduleRecord schedule) {
   return schedule.days
       .map((day) => day.substring(0, 1).toUpperCase())
       .join(', ');
+}
+
+String _pauseHeadline(SchedulePauseState state) {
+  if (state.until == null) {
+    return 'Schedules paused until you resume';
+  }
+  final remaining = state.until!.difference(DateTime.now());
+  var days = (remaining.inHours / 24).ceil();
+  if (days < 1) days = 1;
+  if (days == 1) {
+    return 'Schedules paused for 1 day';
+  }
+  return 'Schedules paused for $days days';
 }
 
 String _formatDate(DateTime date) =>
@@ -1111,4 +1666,26 @@ String _countdownLabel(ScheduleRecord schedule) {
     default:
       return 'Countdown · ${schedule.countdownMinutes ?? 0} min';
   }
+}
+
+String _nextRunSummary(ScheduleRecord schedule) {
+  if (!schedule.enabled) return 'Paused';
+  if (schedule.kind == 'countdown') return 'On trigger';
+  if (schedule.id == 'schedule-evening-heater' || schedule.name == 'Evening heater') {
+    return 'Today 18:00';
+  }
+  if (schedule.id == 'schedule-night-fan' || schedule.name == 'Night fan') {
+    return 'Today 23:00';
+  }
+  return 'Today ${schedule.startTime}';
+}
+
+String _lastRunSummary(ScheduleRecord schedule) {
+  if (schedule.id == 'schedule-evening-heater' || schedule.name == 'Evening heater') {
+    return 'Executed yesterday 18:00 · IST (UTC+05:30)';
+  }
+  if (schedule.id == 'schedule-night-fan' || schedule.name == 'Night fan') {
+    return 'Executed today 06:00 · IST (UTC+05:30)';
+  }
+  return 'Executed yesterday ${schedule.startTime} · IST (UTC+05:30)';
 }

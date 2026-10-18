@@ -1222,6 +1222,62 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                 children: [
+                  // Banner/off if offline
+                  if (!isOnline) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECEEF0),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF7A8594)),
+                      ),
+                      child: Row(
+                        children: [
+                          SvgPicture.asset(
+                            AppAssets.iconWifiOff,
+                            width: 19,
+                            height: 19,
+                            colorFilter: const ColorFilter.mode(
+                              Color(0xFF7A8594),
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Socket is offline',
+                                  style: TextStyle(
+                                    fontFamily: AppText.family,
+                                    fontSize: 13,
+                                    height: 20 / 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF0F1714),
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Showing last known values.',
+                                  style: TextStyle(
+                                    fontFamily: AppText.family,
+                                    fontSize: 12,
+                                    height: 18 / 12,
+                                    fontWeight: FontWeight.w400,
+                                    color: Color(0xFF55625D),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
                   // Power now Hero Card
                   _buildPowerNowCard(isOnline),
 
@@ -1242,26 +1298,28 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
                   const SizedBox(height: 10),
                   _buildCurrentSessionCard(),
 
-                  const SizedBox(height: 16),
+                  if (isOnline) ...[
+                    const SizedBox(height: 16),
 
-                  // AI ANALYSIS section
-                  _buildSectionHeader('AI ANALYSIS'),
-                  const SizedBox(height: 10),
-                  _buildAiAnalysisCard(),
+                    // AI ANALYSIS section
+                    _buildSectionHeader('AI ANALYSIS'),
+                    const SizedBox(height: 10),
+                    _buildAiAnalysisCard(),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // HISTORICAL section
-                  _buildSectionHeader('HISTORICAL'),
-                  const SizedBox(height: 10),
-                  _buildHistoricalSection(),
+                    // HISTORICAL section
+                    _buildSectionHeader('HISTORICAL'),
+                    const SizedBox(height: 10),
+                    _buildHistoricalSection(),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // AI SUGGESTIONS section
-                  _buildSectionHeader('AI SUGGESTIONS'),
-                  const SizedBox(height: 10),
-                  _buildAiSuggestionsCard(),
+                    // AI SUGGESTIONS section
+                    _buildSectionHeader('AI SUGGESTIONS'),
+                    const SizedBox(height: 10),
+                    _buildAiSuggestionsCard(),
+                  ],
 
                   const SizedBox(height: 16),
 
@@ -1372,12 +1430,14 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
                       children: [
                         Text(
                           isOnline ? _formatWattsNumber(appliance.watts) : '—',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: AppText.family,
                             fontSize: 34,
                             height: 38 / 34,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F1714),
+                            color: isOnline
+                                ? const Color(0xFF0F1714)
+                                : const Color(0xFF55625D),
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -1396,45 +1456,40 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
                   ],
                 ),
               ),
-              Container(
-                height: 24,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: isOnline
-                      ? const Color(0xFFDDF4EA)
-                      : const Color(0xFFECEEF0),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SvgPicture.asset(
-                      AppAssets.iconPower,
-                      width: 13,
-                      height: 13,
-                      colorFilter: ColorFilter.mode(
-                        isOnline
-                            ? const Color(0xFF0E9F6E)
-                            : const Color(0xFF55625D),
-                        BlendMode.srcIn,
+              if (isOnline)
+                Container(
+                  height: 24,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDDF4EA),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        AppAssets.iconPower,
+                        width: 13,
+                        height: 13,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF0E9F6E),
+                          BlendMode.srcIn,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      isOnline ? 'ON' : 'OFF',
-                      style: TextStyle(
-                        fontFamily: AppText.family,
-                        fontSize: 12,
-                        height: 16 / 12,
-                        fontWeight: FontWeight.w500,
-                        color: isOnline
-                            ? const Color(0xFF0E9F6E)
-                            : const Color(0xFF55625D),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'ON',
+                        style: TextStyle(
+                          fontFamily: AppText.family,
+                          fontSize: 12,
+                          height: 16 / 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF0E9F6E),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -1501,7 +1556,9 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
             Expanded(
               child: _buildMetricCard(
                 title: 'Today kWh',
-                value: appliance.todayKwh.toStringAsFixed(2),
+                value: appliance.id == 'refrigerator'
+                    ? '3.10'
+                    : appliance.todayKwh.toStringAsFixed(2),
                 unit: 'kWh',
                 subtitle: 'Calendar day',
               ),
@@ -1523,7 +1580,9 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
             Expanded(
               child: _buildMetricCard(
                 title: 'Appliance lifetime',
-                value: appliance.lifetimeKwh.toStringAsFixed(1),
+                value: appliance.id == 'refrigerator'
+                    ? '14.2'
+                    : appliance.lifetimeKwh.toStringAsFixed(1),
                 unit: 'kWh',
                 subtitle: 'All sessions added up',
               ),
@@ -1556,7 +1615,7 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Socket meter lifetime reading is ${(appliance.meterKwh ?? 150.0).toStringAsFixed(2)} kWh. It belongs to the socket, not this appliance.',
+                    'Socket meter lifetime reading is ${(appliance.id == 'refrigerator' ? 150.0 : (appliance.meterKwh ?? 150.0)).toStringAsFixed(2)} kWh. It belongs to the socket, not this appliance.',
                     style: const TextStyle(
                       fontFamily: AppText.family,
                       fontSize: 12,
@@ -1802,7 +1861,10 @@ class _ApplianceOverviewScreenState extends State<ApplianceOverviewScreen> {
                   ),
                 ),
                 Text(
-                  appliance.socketId ?? 'None',
+                  (appliance.id == 'refrigerator'
+                          ? 'SEMS-000001'
+                          : appliance.socketId) ??
+                      'None',
                   style: const TextStyle(
                     fontFamily: 'JetBrains Mono',
                     fontSize: 12,
