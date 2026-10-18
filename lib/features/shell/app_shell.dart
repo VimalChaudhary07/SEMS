@@ -1,10 +1,6 @@
 // Implements Figma frame: persistent five-tab application shell.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-
-import '../../core/constants/app_assets.dart';
-import '../../core/theme/app_theme.dart';
 import '../../data/providers/mock_data_provider.dart';
 import '../../data/repositories/sems_repository.dart';
 import '../views/alerts_screen.dart';
@@ -12,6 +8,7 @@ import '../views/analytics_screen.dart';
 import '../views/dashboard_screen.dart';
 import '../views/devices_screen.dart';
 import '../views/more_home_screen.dart';
+import '../../shared/widgets/app_bottom_nav.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -69,73 +66,11 @@ class AppShellState extends ConsumerState<AppShell> {
     ];
     return Scaffold(
       body: IndexedStack(index: selectedIndex, children: pages),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: AppBottomNav(
         selectedIndex: selectedIndex,
         onDestinationSelected: (index) => setState(() => selectedIndex = index),
-        destinations: [
-          NavigationDestination(
-            icon: const _NavIcon(asset: AppAssets.homeNav),
-            selectedIcon: const _NavIcon(
-              asset: AppAssets.homeNav,
-              selected: true,
-            ),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: const _NavIcon(asset: AppAssets.plugNav),
-            selectedIcon: const _NavIcon(
-              asset: AppAssets.plugNav,
-              selected: true,
-            ),
-            label: 'Devices',
-          ),
-          NavigationDestination(
-            icon: const _NavIcon(asset: AppAssets.historyNav),
-            selectedIcon: const _NavIcon(
-              asset: AppAssets.historyNav,
-              selected: true,
-            ),
-            label: 'History',
-          ),
-          NavigationDestination(
-            icon: const _NavIcon(asset: AppAssets.alertsNav),
-            selectedIcon: const _NavIcon(
-              asset: AppAssets.alertsNav,
-              selected: true,
-            ),
-            label: 'Alerts',
-          ),
-          NavigationDestination(
-            icon: const _NavIcon(asset: AppAssets.moreNav),
-            selectedIcon: const _NavIcon(
-              asset: AppAssets.moreNav,
-              selected: true,
-            ),
-            label: 'More',
-          ),
-        ],
       ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-    );
-  }
-}
-
-class _NavIcon extends StatelessWidget {
-  const _NavIcon({required this.asset, this.selected = false});
-  final String asset;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>() ?? AppColors.light;
-    return SvgPicture.asset(
-      asset,
-      width: 22,
-      height: 22,
-      colorFilter: ColorFilter.mode(
-        selected ? colors.brandPrimary : colors.textSecondary,
-        BlendMode.srcIn,
-      ),
     );
   }
 }

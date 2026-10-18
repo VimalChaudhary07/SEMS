@@ -20,7 +20,7 @@ Future<void> enterDemo(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await tester.tap(find.text('Skip'));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Continue as demo user'));
+  await tester.tap(find.text('Continue with Google'));
   for (
     var attempt = 0;
     attempt < 50 && find.text('Good evening, Asha').evaluate().isEmpty;
@@ -50,15 +50,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Skip'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Create account'));
+    await tester.tap(find.text('Sign up'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).at(0), 'Demo User');
     await tester.enterText(find.byType(TextFormField).at(1), 'demo@sems.app');
     await tester.enterText(find.byType(TextFormField).at(2), 'sems-demo');
-    await tester.enterText(find.byType(TextFormField).at(3), 'sems-demo');
-    await tester.ensureVisible(find.text('Create demo profile'));
-    await tester.tap(find.text('Create demo profile'));
+    await tester.ensureVisible(find.text('Create account'));
+    await tester.tap(find.text('Create account'));
     await tester.pumpAndSettle();
 
     expect(find.text('demo@sems.app'), findsOneWidget);
@@ -288,7 +287,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Living room socket'));
     await tester.pumpAndSettle();
-    expect(find.text('SEMS-000001'), findsOneWidget);
+    expect(find.text('SEMS-000001'), findsAtLeastNWidgets(1));
     expect(find.text('Voltage'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Safety limits'),
@@ -518,7 +517,7 @@ void main() {
     await enterDemo(tester);
     await tester.tap(find.text('Devices'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.add_circle_outline_rounded));
+    await tester.tap(find.byTooltip('Add socket'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Simulate QR scan'));
     await tester.pump();
@@ -554,7 +553,7 @@ void main() {
     expect(find.text('Over-current at SEMS-000001'), findsOneWidget);
     await tester.tap(find.text('Acknowledge').first);
     await tester.pumpAndSettle();
-    expect(find.text('✓ Acknowledged'), findsOneWidget);
+    expect(find.text('Acknowledged'), findsOneWidget);
     await tester.ensureVisible(find.text('Electrical'));
     await tester.tap(find.text('Electrical'));
     await tester.pumpAndSettle();

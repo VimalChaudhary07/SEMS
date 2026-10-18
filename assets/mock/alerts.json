@@ -22,8 +22,9 @@
   {
     "id": "alert-offline",
     "title": "SEMS-000003 is offline",
-    "message": "No telemetry for 14 minutes. The socket may have lost Wi-Fi. Local safety and schedules continue.",
+    "message": "No telemetry for 14 minutes. The socket may have lost Wi-Fi. It keeps its local safety and schedules running.",
     "time": "Today 18:30",
+    "note": "Occurred 18:16, received 18:30",
     "severity": "warning",
     "category": "connectivity",
     "device": "Kitchen · Refrigerator",

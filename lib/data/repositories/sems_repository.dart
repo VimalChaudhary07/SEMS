@@ -77,7 +77,7 @@ class AlertPreferences {
   const AlertPreferences({
     this.overallPowerLimitW = 3000,
     this.appliancePowerLimitsW = const {'Heater': 2600, 'Fan': 120},
-    this.muteNonCriticalAlerts = true,
+    this.muteNonCriticalAlerts = false,
     this.quietHoursStart = '22:00',
     this.quietHoursEnd = '06:00',
   });
@@ -129,6 +129,13 @@ class MockSemsRepository implements SemsRepository {
                 watts: 2200,
                 todayKwh: 3.1,
                 isOn: true,
+                voltageV: 230.2,
+                currentA: 9.57,
+                frequencyHz: 50.0,
+                powerFactor: 0.99,
+                sessionKwh: 4.20,
+                meterKwh: 150.00,
+                signalDbm: -52,
               ),
               const SemsDevice(
                 id: 'SEMS-000002',
@@ -138,6 +145,13 @@ class MockSemsRepository implements SemsRepository {
                 watts: 55,
                 todayKwh: 0.6,
                 isOn: true,
+                voltageV: 230.1,
+                currentA: 0.24,
+                frequencyHz: 50.0,
+                powerFactor: 0.95,
+                sessionKwh: 0.85,
+                meterKwh: 42.10,
+                signalDbm: -68,
               ),
               const SemsDevice(
                 id: 'SEMS-000003',
@@ -270,8 +284,8 @@ class MockSemsRepository implements SemsRepository {
             lifetimeKwh: 28.6,
             online: true,
             meterKwh: 80.9,
-            sessionKwh: 0.6,
-            sessionStartedAt: 'Today 13:00',
+            sessionKwh: 5.0,
+            sessionStartedAt: '27 Sep 09:00',
             sessionStartMeterKwh: 80.3,
           ),
           const SemsAppliance(
@@ -293,8 +307,12 @@ class MockSemsRepository implements SemsRepository {
             room: '',
             status: 'archived',
             category: 'Heater',
+            socketId: 'SEMS-000001',
             todayKwh: 0,
             lifetimeKwh: 35.8,
+            sessionKwh: 35.8,
+            sessionStartedAt: '11 Sep 08:10',
+            sessionEndedAt: 'Yesterday 22:41',
           ),
         ];
 
@@ -378,7 +396,22 @@ class MockSemsRepository implements SemsRepository {
     EnergyReading('120s', .003),
   ];
   @override
-  List<EnergyReading> get dailyReadings => weeklyReadings;
+  List<EnergyReading> get dailyReadings => const [
+    EnergyReading('27 Sep', 4.1),
+    EnergyReading('28 Sep', 4.6),
+    EnergyReading('29 Sep', 5.2),
+    EnergyReading('30 Sep', 4.8),
+    EnergyReading('1 Oct', 3.9),
+    EnergyReading('2 Oct', 5.5),
+    EnergyReading('3 Oct', 6.1),
+    EnergyReading('4 Oct', 5.0),
+    EnergyReading('5 Oct', 4.7),
+    EnergyReading('6 Oct', 4.4),
+    EnergyReading('7 Oct', 5.3),
+    EnergyReading('8 Oct', 5.8),
+    EnergyReading('9 Oct', 4.9),
+    EnergyReading('10 Oct', 5.4),
+  ];
   @override
   List<EnergyReading> get monthlyReadings => const [
     EnergyReading('Week 1', 28.4),
@@ -410,8 +443,9 @@ class MockSemsRepository implements SemsRepository {
     SemsAlert(
       id: 'alert-3',
       title: 'SEMS-000003 is offline',
-      message: 'No telemetry for 14 minutes. The socket may have lost Wi-Fi. Local safety and schedules continue.',
+      message: 'No telemetry for 14 minutes. The socket may have lost Wi-Fi. It keeps its local safety and schedules running.',
       time: 'Today 18:30',
+      note: 'Occurred 18:16, received 18:30',
       severity: AlertSeverity.warning,
       category: AlertCategory.connectivity,
       device: 'Kitchen · Refrigerator',
@@ -483,6 +517,7 @@ class MockSemsRepository implements SemsRepository {
       severity: alert.severity,
       category: alert.category,
       device: alert.device,
+      note: alert.note,
       acknowledged: true,
     );
   }

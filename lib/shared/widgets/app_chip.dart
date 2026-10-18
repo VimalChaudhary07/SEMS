@@ -12,6 +12,7 @@ class AppChip extends StatelessWidget {
     this.onSelected,
     this.icon,
     this.count,
+    this.height,
   });
 
   final String label;
@@ -19,6 +20,7 @@ class AppChip extends StatelessWidget {
   final ValueChanged<bool>? onSelected;
   final IconData? icon;
   final int? count;
+  final double? height;
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +32,12 @@ class AppChip extends StatelessWidget {
         onTap: onSelected == null ? null : () => onSelected!(!selected),
         borderRadius: BorderRadius.circular(AppRadii.pill),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 40),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          height: height,
+          constraints: height == null ? const BoxConstraints(minHeight: 40) : null,
+          padding: EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: height != null ? 0 : 8,
+          ),
           decoration: BoxDecoration(
             color: selected ? colors.brandPrimary : colors.card,
             borderRadius: BorderRadius.circular(AppRadii.pill),
@@ -56,20 +62,24 @@ class AppChip extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: height != null ? FontWeight.w500 : FontWeight.w600,
                   color: selected ? colors.onBrandPrimary : colors.textPrimary,
                 ),
               ),
               if (count != null) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
+                  height: height != null ? 18 : null,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: height != null ? 5 : 6,
+                    vertical: height != null ? 0 : 2,
                   ),
+                  alignment: height != null ? Alignment.center : null,
                   decoration: BoxDecoration(
                     color: selected
-                        ? colors.onBrandPrimary.withValues(alpha: .18)
+                        ? (height != null
+                            ? Colors.white
+                            : colors.onBrandPrimary.withValues(alpha: .18))
                         : colors.raised,
                     borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
@@ -77,9 +87,14 @@ class AppChip extends StatelessWidget {
                     '$count',
                     style: TextStyle(
                       fontSize: 11,
+                      fontWeight: height != null ? FontWeight.w400 : null,
                       color: selected
-                          ? colors.onBrandPrimary
-                          : colors.textSecondary,
+                          ? (height != null
+                              ? colors.brandPrimary
+                              : colors.onBrandPrimary)
+                          : (height != null
+                              ? colors.textPrimary
+                              : colors.textSecondary),
                     ),
                   ),
                 ),

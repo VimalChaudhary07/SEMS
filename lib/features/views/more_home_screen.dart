@@ -1,223 +1,523 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../core/theme/app_theme.dart';
+import '../../core/constants/app_assets.dart';
 import '../../core/session/demo_session.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/models/sems_models.dart';
 import '../../data/repositories/sems_repository.dart';
 import '../../shared/widgets/sems_widgets.dart';
+import 'add_appliance_screen.dart';
+import 'auth_screens.dart';
+import 'backup_restore_screen.dart';
 import 'device_detail_screen.dart';
 import 'insights_screen.dart';
 import 'more_screens.dart';
-import 'profile_screen.dart';
-import 'settings_screen.dart';
 import 'settings_detail_screens.dart';
-import 'backup_restore_screen.dart';
-import 'add_appliance_screen.dart';
+import 'settings_screen.dart';
 
-class MoreScreen extends StatelessWidget {
+class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key, required this.repository});
   final SemsRepository repository;
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: ListView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4),
-          child: PageHeading(title: 'More', subtitle: 'Your SEMS home tools'),
-        ),
-        const SizedBox(height: 18),
-        AppCard(
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 25,
-                backgroundColor: SemsColors.forest,
-                child: Text(
-                  'AV',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Asha Verma',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    SizedBox(height: 3),
-                    Text(
-                      'owner@sems.app',
-                      style: TextStyle(color: SemsColors.muted, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              RoleBadge(isFamily: DemoSession.isMember),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              _MoreTile(
-                icon: Icons.layers_outlined,
-                title: 'Appliances',
-                subtitle:
-                    '${repository.appliances.where((item) => !item.archived).length} active appliances',
-                onTap: () =>
-                    _push(context, AppliancesScreen(repository: repository)),
-              ),
-              _MoreTile(
-                icon: Icons.calendar_month_outlined,
-                title: 'Scheduling',
-                subtitle: 'Automate device routines',
-                onTap: () =>
-                    _push(context, SchedulesScreen(repository: repository)),
-              ),
-              _MoreTile(
-                icon: Icons.receipt_long_outlined,
-                title: 'Billing and tariff',
-                subtitle: 'Bills, budget, estimates',
-                onTap: () => _push(
-                  context,
-                  TariffSettingsScreen(
-                    repository: repository,
-                    readOnly: DemoSession.isMember,
-                  ),
-                ),
-              ),
-              _MoreTile(
-                icon: Icons.auto_awesome_outlined,
-                title: 'AI energy',
-                subtitle: 'Forecasts and tips',
-                onTap: () =>
-                    _push(context, InsightsScreen(repository: repository)),
-              ),
-              _MoreTile(
-                icon: Icons.cloud_outlined,
-                title: 'Backup and restore',
-                subtitle: 'Local preview',
-                onTap: () {
-                  if (DemoSession.isMember) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Backup is available to the owner in this demo.',
-                        ),
-                      ),
-                    );
-                  } else {
-                    _push(context, const BackupRestoreScreen());
-                  }
-                },
-              ),
-              _MoreTile(
-                icon: Icons.tune_rounded,
-                title: 'Settings',
-                subtitle: 'Profile, notifications, privacy',
-                onTap: () => _push(context, const SettingsScreen()),
-                last: true,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              _MoreTile(
-                icon: Icons.person_outline_rounded,
-                title: 'Profile',
-                subtitle: 'Account and support',
-                onTap: () =>
-                    _push(context, ProfileScreen(repository: repository)),
-              ),
-              _MoreTile(
-                icon: Icons.help_outline_rounded,
-                title: 'Help and support',
-                subtitle: 'Frequently asked questions',
-                onTap: () => _push(context, const HelpScreen()),
-                last: true,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        const Center(
-          child: Text(
-            'SEMS v1.0.0 · Example data only',
-            style: TextStyle(color: SemsColors.muted, fontSize: 11),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  static void _push(BuildContext context, Widget page) =>
-      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+  State<MoreScreen> createState() => _MoreScreenState();
 }
 
-class _MoreTile extends StatelessWidget {
-  const _MoreTile({
-    required this.icon,
+class _MoreScreenState extends State<MoreScreen> {
+  bool _darkTheme = false;
+
+  void _push(Widget page) =>
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+
+  void _signOut() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign out?'),
+        content: const Text(
+          'Your data stays on this phone. Sign in again to control sockets.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          AppButton(
+            fullWidth: false,
+            variant: AppButtonVariant.danger,
+            onPressed: () {
+              DemoSession.role.value = DemoRole.owner;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute<void>(builder: (_) => const SignInScreen()),
+                (_) => false,
+              );
+            },
+            label: 'Sign out',
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final activeAppliances = widget.repository.appliances
+        .where((item) => !item.archived)
+        .length;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F7F6),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF4F7F6),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        toolbarHeight: 56,
+        titleSpacing: 16,
+        title: const Text(
+          'More',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF0F1714),
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: RoleBadge(
+              isFamily: DemoSession.isMember,
+              showIcon: false,
+            ),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        children: [
+          // Profile Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE1E9E5)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color.fromRGBO(16, 22, 20, 0.05),
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
+                BoxShadow(
+                  color: Color.fromRGBO(16, 22, 20, 0.05),
+                  blurRadius: 14,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0E9F6E),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'AV',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Asha Verma',
+                        style: TextStyle(
+                          color: Color(0xFF0F1714),
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          height: 1.41,
+                        ),
+                      ),
+                      Text(
+                        'owner@sems.app',
+                        style: TextStyle(
+                          color: Color(0xFF55625D),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          height: 1.38,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  height: 24,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDDF4EA),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        AppAssets.iconUser,
+                        width: 13,
+                        height: 13,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF0E9F6E),
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        DemoSession.isMember ? 'Family' : 'Owner',
+                        style: const TextStyle(
+                          color: Color(0xFF0E9F6E),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Group 1 Card
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE1E9E5)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color.fromRGBO(16, 22, 20, 0.05),
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
+                BoxShadow(
+                  color: Color.fromRGBO(16, 22, 20, 0.05),
+                  blurRadius: 14,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                _MoreRow(
+                  svgIcon: AppAssets.iconLayers,
+                  iconBg: const Color(0xFFDDF4EA),
+                  iconColor: const Color(0xFF0E9F6E),
+                  title: 'Appliances',
+                  subtitle: '$activeAppliances active',
+                  onTap: () => _push(AppliancesScreen(repository: widget.repository)),
+                ),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+                _MoreRow(
+                  svgIcon: AppAssets.iconCalendar,
+                  iconBg: const Color(0xFFDDF4EA),
+                  iconColor: const Color(0xFF0E9F6E),
+                  title: 'Scheduling',
+                  subtitle: '2 active schedules',
+                  onTap: () => _push(SchedulesScreen(repository: widget.repository)),
+                ),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+                _MoreRow(
+                  svgIcon: AppAssets.iconReceipt,
+                  iconBg: const Color(0xFFDDF4EA),
+                  iconColor: const Color(0xFF0E9F6E),
+                  title: 'Billing and tariff',
+                  subtitle: 'Bills, budget, estimates',
+                  onTap: () => _push(
+                    TariffSettingsScreen(
+                      repository: widget.repository,
+                      readOnly: DemoSession.isMember,
+                    ),
+                  ),
+                ),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+                _MoreRow(
+                  svgIcon: AppAssets.iconSparkle,
+                  iconBg: const Color(0xFFECE6FB),
+                  iconColor: const Color(0xFF7E3AF2),
+                  title: 'AI energy',
+                  subtitle: 'Forecasts and tips',
+                  onTap: () => _push(InsightsScreen(repository: widget.repository)),
+                ),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+                _MoreRow(
+                  svgIcon: AppAssets.iconCloud,
+                  iconBg: const Color(0xFFDDF4EA),
+                  iconColor: const Color(0xFF0E9F6E),
+                  title: 'Backup and restore',
+                  subtitle: 'Google Drive connected',
+                  onTap: () {
+                    if (DemoSession.isMember) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Backup is available to the owner in this demo.',
+                          ),
+                        ),
+                      );
+                    } else {
+                      _push(const BackupRestoreScreen());
+                    }
+                  },
+                ),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+                _MoreRow(
+                  svgIcon: AppAssets.iconSliders,
+                  iconBg: const Color(0xFFDDF4EA),
+                  iconColor: const Color(0xFF0E9F6E),
+                  title: 'Settings',
+                  subtitle: 'Profile, notifications, privacy',
+                  onTap: () => _push(const SettingsScreen()),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Group 2 Card
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE1E9E5)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color.fromRGBO(16, 22, 20, 0.05),
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
+                BoxShadow(
+                  color: Color.fromRGBO(16, 22, 20, 0.05),
+                  blurRadius: 14,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                InkWell(
+                  onTap: () => setState(() => _darkTheme = !_darkTheme),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEAF1EE),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          alignment: Alignment.center,
+                          child: SvgPicture.asset(
+                            AppAssets.iconMoon,
+                            width: 19,
+                            height: 19,
+                            colorFilter: const ColorFilter.mode(
+                              Color(0xFF0F1714),
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Dark theme',
+                            style: TextStyle(
+                              color: Color(0xFF0F1714),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              height: 1.33,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => setState(() => _darkTheme = !_darkTheme),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 46,
+                            height: 28,
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: _darkTheme ? const Color(0xFF0E9F6E) : const Color(0xFFE1E9E5),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Align(
+                              alignment: _darkTheme ? Alignment.centerRight : Alignment.centerLeft,
+                              child: Container(
+                                width: 22,
+                                height: 22,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+                InkWell(
+                  onTap: _signOut,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFBE6E6),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          alignment: Alignment.center,
+                          child: SvgPicture.asset(
+                            AppAssets.iconLogout,
+                            width: 19,
+                            height: 19,
+                            colorFilter: const ColorFilter.mode(
+                              Color(0xFFD64545),
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Sign out',
+                            style: TextStyle(
+                              color: Color(0xFFD64545),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              height: 1.33,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Center(
+            child: Text(
+              'SEMS v1.0.0 · Example data only',
+              style: TextStyle(
+                color: Color(0xFF55625D),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MoreRow extends StatelessWidget {
+  const _MoreRow({
+    required this.svgIcon,
+    required this.iconBg,
+    required this.iconColor,
     required this.title,
     required this.subtitle,
     required this.onTap,
-    this.last = false,
   });
-  final IconData icon;
-  final String title, subtitle;
+
+  final String svgIcon;
+  final Color iconBg;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
   final VoidCallback onTap;
-  final bool last;
+
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      ListTile(
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 1),
-        leading: Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: ComponentTheme.colors(context).brandTint,
-            borderRadius: BorderRadius.circular(11),
-          ),
-          child: Icon(
-            icon,
-            size: 19,
-            color: ComponentTheme.colors(context).brandPrimary,
-          ),
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: SvgPicture.asset(
+                svgIcon,
+                width: 19,
+                height: 19,
+                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Color(0xFF0F1714),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      height: 1.33,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Color(0xFF55625D),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SvgPicture.asset(
+              AppAssets.iconChevRight,
+              width: 18,
+              height: 18,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF55625D),
+                BlendMode.srcIn,
+              ),
+            ),
+          ],
         ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(color: SemsColors.muted, fontSize: 11),
-        ),
-        trailing: const Icon(
-          Icons.chevron_right_rounded,
-          color: SemsColors.muted,
-        ),
-        minLeadingWidth: 0,
       ),
-      if (!last) const Divider(height: 1, indent: 64),
-    ],
-  );
+    );
+  }
 }
 
 class AppliancesScreen extends StatefulWidget {

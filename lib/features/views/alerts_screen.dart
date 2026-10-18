@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../core/constants/app_assets.dart';
 import '../../core/session/demo_session.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/sems_models.dart';
@@ -47,70 +49,114 @@ class _AlertsScreenState extends State<AlertsScreen> {
         .where((a) => !a.acknowledged && a.category != AlertCategory.ai)
         .length;
     return Scaffold(
+      backgroundColor: const Color(0xFFF4F7F6),
       appBar: AppBar(
-        title: const Text('Alerts'),
+        backgroundColor: const Color(0xFFF4F7F6),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        toolbarHeight: 56,
+        titleSpacing: 16,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Alerts',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF0F1714),
+                height: 1.2,
+              ),
+            ),
+            Text(
+              '$newCount need attention',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF55625D),
+                height: 1.33,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Alert settings',
             onPressed: _settings,
-            icon: const Icon(Icons.tune_rounded),
+            icon: SvgPicture.asset(
+              AppAssets.iconSliders,
+              width: 22,
+              height: 22,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF0F1714),
+                BlendMode.srcIn,
+              ),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: RoleBadge(isFamily: DemoSession.isMember),
+            child: RoleBadge(
+              isFamily: DemoSession.isMember,
+              showIcon: false,
+            ),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          Text(
-            '$newCount need attention',
-            style: const TextStyle(fontSize: 12, color: SemsColors.muted),
-          ),
-          const SizedBox(height: 12),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
                 for (final filter in filters)
                   Padding(
-                    padding: const EdgeInsets.only(right: 7),
+                    padding: const EdgeInsets.only(right: 8),
                     child: AppChip(
                       selected: selected == filter,
                       label: filter,
-                      count: _countFor(filter),
+                      height: 36,
+                      count: _countFor(filter) > 0 ? _countFor(filter) : null,
                       onSelected: (_) => setState(() => selected = filter),
                     ),
                   ),
               ],
             ),
           ),
-          if (selected == 'AI')
+          if (selected == 'AI') ...[
+            const SizedBox(height: 12),
             const AppCard(
               child: Text(
                 'AI alerts are estimates based on local sample history; they are informational, not electrical faults.',
                 style: TextStyle(color: SemsColors.muted, fontSize: 12),
               ),
             ),
+          ],
           FutureBuilder<AlertPreferences>(
             future: _preferences,
             builder: (context, snapshot) {
               if (snapshot.hasError) {
-                return AppCard(
-                  child: Text(
-                    'Unable to load alert preferences: ${snapshot.error}',
-                    style: const TextStyle(color: SemsColors.red, fontSize: 12),
+                return Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: AppCard(
+                    child: Text(
+                      'Unable to load alert preferences: ${snapshot.error}',
+                      style: const TextStyle(color: SemsColors.red, fontSize: 12),
+                    ),
                   ),
                 );
               }
               return snapshot.data?.muteNonCriticalAlerts == true
-                  ? AppCard(
-                      child: Text(
-                        'Quiet hours are on (${snapshot.data!.quietHoursStart} to ${snapshot.data!.quietHoursEnd}). Critical safety alerts always come through.',
-                        style: const TextStyle(
-                          color: SemsColors.muted,
-                          fontSize: 12,
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: AppCard(
+                        child: Text(
+                          'Quiet hours are on (${snapshot.data!.quietHoursStart} to ${snapshot.data!.quietHoursEnd}). Critical safety alerts always come through.',
+                          style: const TextStyle(
+                            color: SemsColors.muted,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     )
@@ -134,13 +180,6 @@ class _AlertsScreenState extends State<AlertsScreen> {
                 onOpen: () => _showDetails(alert),
               ),
             ),
-          const SizedBox(height: 6),
-          const AppCard(
-            child: Text(
-              'Alerts use sample local data. No monitoring service or push notifications are connected.',
-              style: TextStyle(color: SemsColors.muted, fontSize: 12),
-            ),
-          ),
         ],
       ),
     );
@@ -228,112 +267,251 @@ class _AlertCard extends StatelessWidget {
     required this.onAcknowledge,
     required this.onOpen,
   });
+
   final SemsAlert alert;
   final bool isAcknowledged;
   final VoidCallback onAcknowledge, onOpen;
+
   @override
   Widget build(BuildContext context) {
-    final color = switch (alert.severity) {
-      AlertSeverity.critical => SemsColors.red,
-      AlertSeverity.warning => SemsColors.amber,
-      AlertSeverity.info => const Color(0xFF4C86E8),
+    final (accentColor, badgeBg, badgeTextColor, badgeIcon, badgeLabel) =
+        switch (alert.severity) {
+      AlertSeverity.critical => (
+        const Color(0xFFD64545),
+        const Color(0xFFFBE6E6),
+        const Color(0xFFD64545),
+        AppAssets.iconAlert,
+        'Critical',
+      ),
+      AlertSeverity.warning => (
+        const Color(0xFFD98A00),
+        const Color(0xFFFCF0D9),
+        const Color(0xFFD98A00),
+        AppAssets.iconAlert,
+        'Warning',
+      ),
+      AlertSeverity.info => (
+        const Color(0xFF2F6FED),
+        const Color(0xFFE3ECFD),
+        const Color(0xFF2F6FED),
+        AppAssets.iconInfo,
+        'Info',
+      ),
     };
-    final label = switch (alert.severity) {
-      AlertSeverity.critical => 'Critical',
-      AlertSeverity.warning => 'Warning',
-      AlertSeverity.info => 'Info',
-    };
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onOpen,
-      child: Container(
-        decoration: BoxDecoration(
-          color: ComponentTheme.colors(context).card,
-          border: Border(left: BorderSide(color: color, width: 4)),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: .05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+
+    final cardContent = Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE1E9E5)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(16, 22, 20, 0.05),
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+          BoxShadow(
+            color: Color.fromRGBO(16, 22, 20, 0.05),
+            blurRadius: 14,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: .13),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Text(
-                    '△ $label',
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 10,
+            Container(
+              width: 4,
+              color: accentColor,
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          height: 24,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: badgeBg,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SvgPicture.asset(
+                                badgeIcon,
+                                width: 13,
+                                height: 13,
+                                colorFilter: ColorFilter.mode(
+                                  badgeTextColor,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                badgeLabel,
+                                style: TextStyle(
+                                  color: badgeTextColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isAcknowledged) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            height: 24,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE2F1E8),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SvgPicture.asset(
+                                  AppAssets.iconCheck,
+                                  width: 13,
+                                  height: 13,
+                                  colorFilter: const ColorFilter.mode(
+                                    Color(0xFF2E9E5B),
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'Acknowledged',
+                                  style: TextStyle(
+                                    color: Color(0xFF2E9E5B),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const Spacer(),
+                        Text(
+                          alert.time,
+                          style: const TextStyle(
+                            color: Color(0xFF55625D),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  alert.time,
-                  style: const TextStyle(color: SemsColors.muted, fontSize: 10),
-                ),
-              ],
-            ),
-            const SizedBox(height: 7),
-            Text(
-              alert.title,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              alert.device,
-              style: const TextStyle(color: SemsColors.muted, fontSize: 11),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              alert.message,
-              style: const TextStyle(fontSize: 12, height: 1.45),
-            ),
-            const SizedBox(height: 9),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: isAcknowledged ? null : onAcknowledge,
-                style: TextButton.styleFrom(
-                  backgroundColor: isAcknowledged
-                      ? SemsColors.canvas
-                      : SemsColors.mint,
-                  foregroundColor: SemsColors.ink,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 13,
-                    vertical: 7,
-                  ),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  isAcknowledged ? '✓ Acknowledged' : 'Acknowledge',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 11,
-                  ),
+                    const SizedBox(height: 6),
+                    Text(
+                      alert.title,
+                      style: const TextStyle(
+                        color: Color(0xFF0F1714),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        height: 1.33,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      alert.device,
+                      style: const TextStyle(
+                        color: Color(0xFF55625D),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        height: 1.33,
+                      ),
+                    ),
+                    if (alert.note != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SvgPicture.asset(
+                            AppAssets.iconClock,
+                            width: 12,
+                            height: 12,
+                            colorFilter: const ColorFilter.mode(
+                              Color(0xFFD98A00),
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            alert.note!,
+                            style: const TextStyle(
+                              color: Color(0xFFD98A00),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    Text(
+                      alert.message,
+                      style: const TextStyle(
+                        color: Color(0xFF0F1714),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        height: 1.54,
+                      ),
+                    ),
+                    if (!isAcknowledged) ...[
+                      const SizedBox(height: 10),
+                      InkWell(
+                        onTap: onAcknowledge,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: 40,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEAF1EE),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Acknowledge',
+                                style: TextStyle(
+                                  color: Color(0xFF0F1714),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onOpen,
+      child: isAcknowledged
+          ? Opacity(
+              opacity: 0.7,
+              child: cardContent,
+            )
+          : cardContent,
     );
   }
 }

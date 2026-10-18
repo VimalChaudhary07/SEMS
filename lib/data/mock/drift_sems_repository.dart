@@ -787,6 +787,7 @@ class DriftSemsRepository implements SemsRepository {
       severity: alert.severity,
       category: alert.category,
       device: alert.device,
+      note: alert.note,
       acknowledged: true,
     );
   }
@@ -1009,6 +1010,7 @@ class DriftSemsRepository implements SemsRepository {
       severity: severity,
       category: category,
       device: record.data['device'] as String? ?? '',
+      note: record.data['note'] as String?,
       acknowledged: record.data['acknowledged'] as bool? ?? false,
     );
   }

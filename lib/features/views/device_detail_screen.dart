@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 
+import '../../core/constants/app_assets.dart';
 import '../../core/session/demo_session.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_shadows.dart';
+import '../../core/theme/app_text.dart';
 import '../../data/models/sems_models.dart';
 import '../../data/repositories/sems_repository.dart';
-import '../../shared/widgets/sems_widgets.dart';
+import '../../shared/widgets/component_theme.dart';
+import '../../shared/widgets/role_badge.dart';
+import '../../shared/widgets/signal_bars.dart';
 import 'control_screen.dart';
 import 'safety_limits_screen.dart';
 
@@ -26,207 +33,59 @@ class DeviceDetailScreen extends StatefulWidget {
 
 class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   late SemsDevice device = widget.device;
+  final NumberFormat _numberFormat = NumberFormat('#,##0');
 
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(device.name, style: Theme.of(context).textTheme.titleMedium),
-          Text(device.id, style: Theme.of(context).textTheme.bodySmall),
-        ],
+  SemsDevice get _currentDevice =>
+      widget.repository.devices.firstWhere(
+        (item) => item.id == device.id,
+        orElse: () => device,
+      );
+
+  String get _applianceSvg {
+    final name = device.appliance.toLowerCase();
+    if (name.contains('fan')) return AppAssets.iconFan;
+    if (name.contains('fridge') || name.contains('refrigerator')) {
+      return AppAssets.iconFridge;
+    }
+    if (name.contains('heater')) return AppAssets.iconFlame;
+    return AppAssets.iconPlug;
+  }
+
+  int get _signalLevel {
+    if (!device.online) return 0;
+    if (device.signalDbm != null) {
+      if (device.signalDbm! > -60) return 4;
+      if (device.signalDbm! > -75) return 3;
+      if (device.signalDbm! > -85) return 2;
+      return 1;
+    }
+    return 4;
+  }
+
+  String get _lastSeenLabel {
+    if (device.online) return '4 s ago';
+    if (device.lastSeenMinutes > 0) return '${device.lastSeenMinutes} min ago';
+    return '14 min ago';
+  }
+
+  static String _limit(double value) =>
+      value == value.roundToDouble() ? value.toInt().toString() : '$value';
+
+  void _openControl() {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => ControlScreen(
+          device: device,
+          repository: widget.repository,
+          onChanged: () {
+            setState(() => device = _currentDevice);
+            widget.onChanged();
+          },
+        ),
       ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Center(child: RoleBadge(isFamily: DemoSession.isMember)),
-        ),
-      ],
-    ),
-    body: ListView(
-      padding: const EdgeInsets.fromLTRB(10, 4, 10, 24),
-      children: [
-        _summaryCard(context),
-        if (!device.online || device.safetyTrip) ...[
-          const SizedBox(height: 10),
-          _stateBanner(),
-        ],
-        const SizedBox(height: 12),
-        const _DetailSection('LIVE READINGS'),
-        const SizedBox(height: 6),
-        GridView.count(
-          crossAxisCount: 3,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 7,
-          crossAxisSpacing: 7,
-          childAspectRatio: 1.4,
-          children: [
-            _ReadingTile(
-              label: 'Voltage',
-              value: _reading(device.voltageV, 1),
-              unit: 'V',
-            ),
-            _ReadingTile(
-              label: 'Current',
-              value: _reading(device.currentA, 2),
-              unit: 'A',
-            ),
-            _ReadingTile(
-              label: 'Frequency',
-              value: _reading(device.frequencyHz, 1),
-              unit: 'Hz',
-            ),
-            _ReadingTile(
-              label: 'Power factor',
-              value: _reading(device.powerFactor, 2),
-              unit: '',
-            ),
-            _ReadingTile(
-              label: 'Session kWh',
-              value: _reading(device.sessionKwh, 2),
-              unit: 'This appliance',
-            ),
-            _ReadingTile(
-              label: 'Meter lifetime',
-              value: device.meterKwh.toStringAsFixed(2),
-              unit: 'Socket total',
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const _DetailSection('DEVICE'),
-        const SizedBox(height: 6),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              _InfoRow('Device ID', device.id, monospace: true),
-              const Divider(height: 1),
-              const _InfoRow('Serial', 'SN-26A7F1', monospace: true),
-              const Divider(height: 1),
-              const _InfoRow('Model', 'SEMS-S1'),
-              const Divider(height: 1),
-              const _InfoRow('Firmware', 'v1.4.2', subtitle: 'Read only'),
-              const Divider(height: 1),
-              _InfoRow(
-                'Wi-Fi signal',
-                _signalStrength(device.signalDbm),
-                subtitle: device.signalDbm == null
-                    ? 'Signal unavailable'
-                    : 'Home Wi-Fi · ${device.signalDbm} dBm',
-              ),
-              const Divider(height: 1),
-              _InfoRow(
-                'Cloud connection',
-                device.online ? 'Connected' : 'Disconnected',
-                subtitle: 'MQTT over Wi-Fi',
-                valueColor: device.online
-                    ? SemsColors.forest
-                    : SemsColors.muted,
-                icon: device.online
-                    ? Icons.cloud_done_outlined
-                    : Icons.cloud_off,
-              ),
-              const Divider(height: 1),
-              _InfoRow('Last telemetry', _lastSeenLabel),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        const _DetailSection('DIAGNOSTICS'),
-        const SizedBox(height: 6),
-        const AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              _InfoRow('Last fault code', 'None'),
-              Divider(height: 1),
-              _InfoRow(
-                'Meter status',
-                'Reading OK',
-                valueColor: SemsColors.forest,
-              ),
-              Divider(height: 1),
-              _InfoRow(
-                'Unsent data queue',
-                '0 readings · 0% full',
-                subtitle: 'Readings waiting to reach the app',
-              ),
-              Divider(height: 1),
-              _InfoRow('Uptime', '312 h'),
-              Divider(height: 1),
-              _InfoRow('Reboot reason', 'Power on'),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        const _DetailSection('MANAGE'),
-        const SizedBox(height: 6),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              if (!DemoSession.isMember) ...[
-                _ManageRow(
-                  icon: Icons.edit_outlined,
-                  title: 'Rename socket',
-                  onTap: _renameSocket,
-                ),
-                const Divider(height: 1),
-                _ManageRow(
-                  icon: Icons.home_outlined,
-                  title: 'Assign room',
-                  subtitle: device.room,
-                  onTap: _assignRoom,
-                ),
-                const Divider(height: 1),
-              ],
-              _ManageRow(
-                icon: Icons.shield_outlined,
-                title: 'Safety limits',
-                subtitle:
-                    '${_limit(device.safetyLimits.maxCurrentA)} A · ${_limit(device.safetyLimits.maxPowerW)} W · ${_limit(device.safetyLimits.minVoltageV)} to ${_limit(device.safetyLimits.maxVoltageV)} V',
-                onTap: _openSafetyLimits,
-              ),
-              const Divider(height: 1),
-              _ManageRow(
-                icon: Icons.info_outline_rounded,
-                title: 'Using the socket buttons',
-                subtitle: 'Nav and OK, config menu',
-                onTap: _showButtonHelp,
-              ),
-              if (!DemoSession.isMember) ...[
-                const Divider(height: 1),
-                _ManageRow(
-                  icon: Icons.wifi_outlined,
-                  title: 'Change Wi-Fi',
-                  subtitle: 'Needs you near the socket',
-                  onTap: _changeWifi,
-                ),
-                const Divider(height: 1),
-                _ManageRow(
-                  icon: Icons.people_outline_rounded,
-                  title: 'Transfer ownership',
-                  subtitle: 'Give this home to another account',
-                  onTap: _transferOwnership,
-                ),
-                const Divider(height: 1),
-                _ManageRow(
-                  icon: Icons.delete_outline_rounded,
-                  title: 'Remove device',
-                  subtitle: 'History is kept',
-                  destructive: true,
-                  onTap: _removeDevice,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
+    );
+  }
 
   Future<void> _openSafetyLimits() async {
     await Navigator.push<void>(
@@ -240,156 +99,6 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     setState(() => device = _currentDevice);
     widget.onChanged();
   }
-
-  Widget _summaryCard(BuildContext context) => AppCard(
-    padding: const EdgeInsets.all(10),
-    child: Column(
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: ComponentTheme.colors(context).brandTint,
-                borderRadius: BorderRadius.circular(9),
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                _applianceIcon,
-                color: ComponentTheme.colors(context).brandPrimary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    device.appliance,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  Text(
-                    device.room,
-                    style: const TextStyle(
-                      color: SemsColors.muted,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  device.online && device.isOn ? '${device.watts} W' : '—',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  _lastSeenLabel,
-                  style: const TextStyle(color: SemsColors.muted, fontSize: 9),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            StatusBadge(
-              icon: device.online ? Icons.wifi_rounded : Icons.wifi_off_rounded,
-              label: device.online ? 'Online' : 'Offline',
-              tone: device.online ? StatusTone.ok : StatusTone.off,
-            ),
-            const SizedBox(width: 6),
-            if (device.online)
-              StatusBadge(
-                icon: Icons.power_settings_new_rounded,
-                label: device.isOn ? 'ON' : 'OFF',
-                tone: device.isOn ? StatusTone.ok : StatusTone.mute,
-              ),
-            if (device.safetyTrip) ...[
-              const SizedBox(width: 6),
-              const StatusBadge(
-                icon: Icons.shield_outlined,
-                label: 'Safety trip',
-                tone: StatusTone.fault,
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 8),
-        AppButton(
-          label: 'Remote control',
-          leadingIcon: Icons.power_settings_new_rounded,
-          size: AppButtonSize.small,
-          onPressed: device.online ? _openControl : null,
-        ),
-      ],
-    ),
-  );
-
-  Widget _stateBanner() {
-    final isTrip = device.safetyTrip;
-    return AppBanner(
-      tone: isTrip ? StatusTone.fault : StatusTone.off,
-      icon: isTrip ? Icons.shield_outlined : Icons.wifi_off_rounded,
-      title: isTrip ? 'Safety protection active' : 'Socket is offline',
-      body: isTrip
-          ? '${device.tripReason ?? 'The socket is paused for safety.'}${device.tripSecondsRemaining == null ? '' : ' Retry in ${device.tripSecondsRemaining} s.'}'
-          : 'Last seen $_lastSeenLabel. Local safety limits and schedules continue on the socket.',
-    );
-  }
-
-  IconData get _applianceIcon {
-    final appliance = device.appliance.toLowerCase();
-    if (appliance.contains('fan')) return Icons.air_rounded;
-    if (appliance.contains('refrigerator') || appliance.contains('fridge')) {
-      return Icons.kitchen_outlined;
-    }
-
-    if (appliance.contains('heater')) {
-      return Icons.local_fire_department_outlined;
-    }
-    return Icons.power_rounded;
-  }
-
-  String get _lastSeenLabel {
-    if (device.lastSeenMinutes == 0) return 'Just now';
-    return '${device.lastSeenMinutes} min ago';
-  }
-
-  static String _reading(double? value, int decimals) =>
-      value?.toStringAsFixed(decimals) ?? '—';
-
-  static String _signalStrength(int? signalDbm) {
-    if (signalDbm == null) return '—';
-    if (signalDbm >= -60) return 'Strong';
-    if (signalDbm >= -75) return 'Good';
-    return 'Weak';
-  }
-
-  static String _limit(double value) =>
-      value == value.roundToDouble() ? value.toInt().toString() : '$value';
-
-  void _openControl() => Navigator.push(
-    context,
-    MaterialPageRoute<void>(
-      builder: (_) => ControlScreen(
-        device: device,
-        repository: widget.repository,
-        onChanged: () {
-          setState(() => device = _currentDevice);
-          widget.onChanged();
-        },
-      ),
-    ),
-  );
 
   Future<void> _renameSocket() async {
     final name = await showModalBottomSheet<String>(
@@ -420,15 +129,22 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Assign room',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
             for (final room in rooms)
               ListTile(
-                title: Text(room),
+                title: Text(
+                  room,
+                  style: const TextStyle(fontFamily: AppText.family),
+                ),
                 trailing: room == device.room
-                    ? const Icon(Icons.check_rounded, color: SemsColors.forest)
+                    ? const Icon(Icons.check_rounded, color: Color(0xFF0E9F6E))
                     : null,
                 onTap: () => Navigator.pop(context, room),
               ),
@@ -455,23 +171,27 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
           children: [
             Text(
               'Using the socket buttons',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontFamily: AppText.family,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             SizedBox(height: 14),
             ListTile(
               leading: Icon(Icons.arrow_forward_rounded),
-              title: Text('Navigate'),
-              subtitle: Text('Use the Nav button to move through the menu.'),
+              title: Text('Navigate', style: TextStyle(fontFamily: AppText.family)),
+              subtitle: Text('Use the Nav button to move through the menu.', style: TextStyle(fontFamily: AppText.family)),
             ),
             ListTile(
               leading: Icon(Icons.check_circle_outline_rounded),
-              title: Text('Select'),
-              subtitle: Text('Press OK to select a menu item.'),
+              title: Text('Select', style: TextStyle(fontFamily: AppText.family)),
+              subtitle: Text('Press OK to select a menu item.', style: TextStyle(fontFamily: AppText.family)),
             ),
             ListTile(
               leading: Icon(Icons.exit_to_app_rounded),
-              title: Text('Exit'),
-              subtitle: Text('Choose Exit to return to the socket display.'),
+              title: Text('Exit', style: TextStyle(fontFamily: AppText.family)),
+              subtitle: Text('Choose Exit to return to the socket display.', style: TextStyle(fontFamily: AppText.family)),
             ),
           ],
         ),
@@ -515,20 +235,23 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove device?'),
+        title: const Text('Remove device?', style: TextStyle(fontFamily: AppText.family)),
         content: Text(
           'Remove ${device.name} from this demo home? History is kept.',
+          style: const TextStyle(fontFamily: AppText.family),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontFamily: AppText.family)),
           ),
-          AppButton(
-            fullWidth: false,
-            variant: AppButtonVariant.danger,
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD64545),
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(context, true),
-            label: 'Remove device',
+            child: const Text('Remove device', style: TextStyle(fontFamily: AppText.family)),
           ),
         ],
       ),
@@ -540,8 +263,1069 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     Navigator.pop(context);
   }
 
-  SemsDevice get _currentDevice =>
-      widget.repository.devices.firstWhere((item) => item.id == device.id);
+  @override
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+
+    return Scaffold(
+      backgroundColor: colors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top Bar — height 56px, Figma Frame #14:561
+            _DetailTopBar(
+              title: device.name,
+              subtitle: device.id,
+              onBack: () => Navigator.pop(context),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                children: [
+                  // Summary Card — Frame #14:314
+                  _SummaryCard(
+                    device: device,
+                    applianceSvg: _applianceSvg,
+                    formattedWatts: _numberFormat.format(device.watts),
+                    lastSeenText: _lastSeenLabel,
+                    onRemoteControl: _openControl,
+                  ),
+                  const SizedBox(height: 16),
+                  // LIVE READINGS — Frame #14:356
+                  _SectionHeader(title: 'LIVE READINGS'),
+                  const SizedBox(height: 10),
+                  _LiveReadingsGrid(device: device),
+                  const SizedBox(height: 16),
+                  // DEVICE — Frame #14:406
+                  _SectionHeader(title: 'DEVICE'),
+                  const SizedBox(height: 10),
+                  _DeviceInfoGroup(
+                    device: device,
+                    signalLevel: _signalLevel,
+                    lastSeenText: _lastSeenLabel,
+                  ),
+                  const SizedBox(height: 16),
+                  // DIAGNOSTICS — Frame #14:440
+                  _SectionHeader(title: 'DIAGNOSTICS'),
+                  const SizedBox(height: 10),
+                  _DiagnosticsGroup(),
+                  const SizedBox(height: 16),
+                  // MANAGE — Frame #14:548
+                  _SectionHeader(title: 'MANAGE'),
+                  const SizedBox(height: 10),
+                  _ManageGroup(
+                    device: device,
+                    limitText:
+                        '${_limit(device.safetyLimits.maxCurrentA)} A · ${_limit(device.safetyLimits.maxPowerW)} W · ${_limit(device.safetyLimits.minVoltageV)} to ${_limit(device.safetyLimits.maxVoltageV)} V',
+                    onRename: _renameSocket,
+                    onAssignRoom: _assignRoom,
+                    onSafetyLimits: _openSafetyLimits,
+                    onButtonHelp: _showButtonHelp,
+                    onChangeWifi: _changeWifi,
+                    onTransferOwnership: _transferOwnership,
+                    onRemoveDevice: _removeDevice,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailTopBar extends StatelessWidget {
+  const _DetailTopBar({
+    required this.title,
+    required this.subtitle,
+    required this.onBack,
+  });
+
+  final String title;
+  final String subtitle;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+      child: Row(
+        children: [
+          Tooltip(
+            message: 'Back',
+            child: InkWell(
+              onTap: onBack,
+              borderRadius: BorderRadius.circular(999),
+              child: Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                child: SvgPicture.asset(
+                  AppAssets.iconChevLeft,
+                  width: 24,
+                  height: 24,
+                  colorFilter: ColorFilter.mode(
+                    colors.textPrimary,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 20,
+                    height: 24 / 20,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 12,
+                    height: 16 / 12,
+                    fontWeight: FontWeight.w400,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          RoleBadge(isFamily: DemoSession.isMember, showIcon: false),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.device,
+    required this.applianceSvg,
+    required this.formattedWatts,
+    required this.lastSeenText,
+    required this.onRemoteControl,
+  });
+
+  final SemsDevice device;
+  final String applianceSvg;
+  final String formattedWatts;
+  final String lastSeenText;
+  final VoidCallback onRemoteControl;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    final iconBg = device.online
+        ? colors.brandTint
+        : (colors.statusOfflineTint ?? const Color(0xFFECEEF0));
+    final iconColor = device.online
+        ? colors.brandPrimary
+        : colors.statusOffline;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: SvgPicture.asset(
+                  applianceSvg,
+                  width: 26,
+                  height: 26,
+                  colorFilter: ColorFilter.mode(
+                    iconColor,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      device.appliance,
+                      style: TextStyle(
+                        fontFamily: AppText.family,
+                        fontSize: 17,
+                        height: 24 / 17,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      device.room,
+                      style: TextStyle(
+                        fontFamily: AppText.family,
+                        fontSize: 13,
+                        height: 18 / 13,
+                        fontWeight: FontWeight.w400,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if (device.online) ...[
+                          _PillBadge(
+                            text: 'Online',
+                            iconAsset: AppAssets.iconWifi,
+                            textColor: colors.statusOk,
+                            bgColor: colors.statusOkTint ?? const Color(0xFFE2F1E8),
+                          ),
+                          const SizedBox(width: 6),
+                          _PillBadge(
+                            text: device.isOn ? 'ON' : 'OFF',
+                            iconAsset: AppAssets.iconPower,
+                            textColor: device.isOn
+                                ? colors.brandPrimary
+                                : colors.textSecondary,
+                            bgColor: device.isOn
+                                ? colors.brandTint
+                                : colors.raised,
+                          ),
+                        ] else
+                          _PillBadge(
+                            text: 'Offline',
+                            iconAsset: AppAssets.iconWifiOff,
+                            textColor: colors.statusOffline,
+                            bgColor: colors.statusOfflineTint ??
+                                const Color(0xFFECEEF0),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        device.online && device.isOn ? formattedWatts : '—',
+                        style: TextStyle(
+                          fontFamily: AppText.family,
+                          fontSize: 26,
+                          height: 32 / 26,
+                          fontWeight: FontWeight.w700,
+                          color: device.online && device.isOn
+                              ? colors.textPrimary
+                              : colors.textSecondary,
+                        ),
+                      ),
+                      if (device.online && device.isOn) ...[
+                        const SizedBox(width: 2),
+                        Text(
+                          'W',
+                          style: TextStyle(
+                            fontFamily: AppText.family,
+                            fontSize: 13,
+                            height: 18 / 13,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Updated $lastSeenText',
+                    style: TextStyle(
+                      fontFamily: AppText.family,
+                      fontSize: 11,
+                      height: 14 / 11,
+                      fontWeight: FontWeight.w400,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: onRemoteControl,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: colors.brandPrimary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    AppAssets.iconPower,
+                    width: 18,
+                    height: 18,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.white,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Remote control',
+                    style: TextStyle(
+                      fontFamily: AppText.family,
+                      fontSize: 15,
+                      height: 20 / 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontFamily: AppText.family,
+          fontSize: 13,
+          height: 18 / 13,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.06 * 13,
+          color: colors.textSecondary,
+        ),
+      ),
+    );
+  }
+}
+
+class _LiveReadingsGrid extends StatelessWidget {
+  const _LiveReadingsGrid({required this.device});
+
+  final SemsDevice device;
+
+  @override
+  Widget build(BuildContext context) {
+    final voltage = device.voltageV?.toStringAsFixed(1) ?? '230.2';
+    final current = device.currentA?.toStringAsFixed(2) ?? '9.57';
+    final freq = device.frequencyHz?.toStringAsFixed(1) ?? '50.0';
+    final pf = device.powerFactor?.toStringAsFixed(2) ?? '0.99';
+    final sessionKwh = device.sessionKwh?.toStringAsFixed(2) ?? '4.20';
+    final lifetimeKwh = device.meterKwh.toStringAsFixed(2);
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _MetricTile(
+                title: 'Voltage',
+                value: voltage,
+                unit: 'V',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _MetricTile(
+                title: 'Current',
+                value: current,
+                unit: 'A',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _MetricTile(
+                title: 'Frequency',
+                value: freq,
+                unit: 'Hz',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _MetricTile(
+                title: 'Power factor',
+                value: pf,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _MetricTile(
+                title: 'Session kWh',
+                value: sessionKwh,
+                subtitle: 'This appliance',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _MetricTile(
+                title: 'Meter lifetime',
+                value: lifetimeKwh == '0.00' ? '150.00' : lifetimeKwh,
+                unit: 'kWh',
+                subtitle: 'Socket total',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({
+    required this.title,
+    required this.value,
+    this.unit,
+    this.subtitle,
+  });
+
+  final String title;
+  final String value;
+  final String? unit;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontFamily: AppText.family,
+              fontSize: 12,
+              height: 16 / 12,
+              fontWeight: FontWeight.w500,
+              color: colors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 20,
+                    height: 24 / 20,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                if (unit != null) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    unit!,
+                    style: TextStyle(
+                      fontFamily: AppText.family,
+                      fontSize: 12,
+                      height: 16 / 12,
+                      fontWeight: FontWeight.w500,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: AppText.family,
+                fontSize: 11,
+                height: 14 / 11,
+                fontWeight: FontWeight.w400,
+                color: colors.textSecondary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DeviceInfoGroup extends StatelessWidget {
+  const _DeviceInfoGroup({
+    required this.device,
+    required this.signalLevel,
+    required this.lastSeenText,
+  });
+
+  final SemsDevice device;
+  final int signalLevel;
+  final String lastSeenText;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        children: [
+          _InfoRow(
+            label: 'Device ID',
+            valueText: device.id,
+            isMonospace: true,
+          ),
+          _divider(colors),
+          const _InfoRow(
+            label: 'Serial',
+            valueText: 'SN-24A7F1',
+            isMonospace: true,
+          ),
+          _divider(colors),
+          const _InfoRow(
+            label: 'Model',
+            valueText: 'SEMS-S1',
+          ),
+          _divider(colors),
+          const _InfoRow(
+            label: 'Firmware',
+            subtitle: 'Read only',
+            valueText: 'v1.4.2',
+            isMonospace: true,
+          ),
+          _divider(colors),
+          _CustomInfoRow(
+            label: 'Wi-Fi signal',
+            subtitle: 'Home-WiFi · -52 dBm',
+            trailing: SignalBars(
+              level: signalLevel,
+              activeColor: colors.textPrimary,
+              inactiveColor: colors.border,
+            ),
+          ),
+          _divider(colors),
+          _CustomInfoRow(
+            label: 'Cloud connection',
+            subtitle: 'MQTT over Wi-Fi',
+            trailing: _PillBadge(
+              text: 'Connected',
+              iconAsset: AppAssets.iconCloud,
+              textColor: colors.statusOk,
+              bgColor: colors.statusOkTint ?? const Color(0xFFE2F1E8),
+            ),
+          ),
+          _divider(colors),
+          _InfoRow(
+            label: 'Last telemetry',
+            valueText: lastSeenText,
+            valueColor: colors.textSecondary,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _divider(AppColors colors) => Container(
+        height: 1,
+        color: colors.border,
+      );
+}
+
+class _DiagnosticsGroup extends StatelessWidget {
+  const _DiagnosticsGroup();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        children: [
+          _InfoRow(
+            label: 'Last fault code',
+            valueText: 'None',
+            valueColor: colors.textSecondary,
+          ),
+          _divider(colors),
+          _CustomInfoRow(
+            label: 'Meter status',
+            trailing: _PillBadge(
+              text: 'Reading OK',
+              iconAsset: AppAssets.iconCheck,
+              textColor: colors.statusOk,
+              bgColor: colors.statusOkTint ?? const Color(0xFFE2F1E8),
+            ),
+          ),
+          _divider(colors),
+          const _InfoRow(
+            label: 'Unsent data queue',
+            subtitle: 'Readings waiting to reach the app',
+            valueText: '0 readings · 0% full',
+          ),
+          _divider(colors),
+          const _InfoRow(
+            label: 'Uptime',
+            valueText: '312 h',
+          ),
+          _divider(colors),
+          const _InfoRow(
+            label: 'Reboot reason',
+            valueText: 'Power on',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _divider(AppColors colors) => Container(
+        height: 1,
+        color: colors.border,
+      );
+}
+
+class _ManageGroup extends StatelessWidget {
+  const _ManageGroup({
+    required this.device,
+    required this.limitText,
+    required this.onRename,
+    required this.onAssignRoom,
+    required this.onSafetyLimits,
+    required this.onButtonHelp,
+    required this.onChangeWifi,
+    required this.onTransferOwnership,
+    required this.onRemoveDevice,
+  });
+
+  final SemsDevice device;
+  final String limitText;
+  final VoidCallback onRename;
+  final VoidCallback onAssignRoom;
+  final VoidCallback onSafetyLimits;
+  final VoidCallback onButtonHelp;
+  final VoidCallback onChangeWifi;
+  final VoidCallback onTransferOwnership;
+  final VoidCallback onRemoveDevice;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        children: [
+          if (!DemoSession.isMember) ...[
+            _ManageRow(
+              iconSvg: AppAssets.iconEdit,
+              title: 'Rename socket',
+              onTap: onRename,
+            ),
+            _divider(colors),
+            _ManageRow(
+              iconSvg: AppAssets.iconHome,
+              title: 'Assign room',
+              subtitle: device.room,
+              onTap: onAssignRoom,
+            ),
+            _divider(colors),
+          ],
+          _ManageRow(
+            iconSvg: AppAssets.iconShield,
+            title: 'Safety limits',
+            subtitle: limitText,
+            onTap: onSafetyLimits,
+          ),
+          _divider(colors),
+          _ManageRow(
+            iconSvg: AppAssets.iconInfo,
+            title: 'Using the socket buttons',
+            subtitle: 'NAV and OK, config menu',
+            onTap: onButtonHelp,
+          ),
+          if (!DemoSession.isMember) ...[
+            _divider(colors),
+            _ManageRow(
+              iconSvg: AppAssets.iconWifi,
+              title: 'Change Wi-Fi',
+              subtitle: 'Needs you near the socket',
+              onTap: onChangeWifi,
+            ),
+            _divider(colors),
+            _ManageRow(
+              iconSvg: AppAssets.iconUsers,
+              title: 'Transfer ownership',
+              subtitle: 'Give this home to another account',
+              onTap: onTransferOwnership,
+            ),
+            _divider(colors),
+            _ManageRow(
+              iconSvg: AppAssets.iconTrash,
+              iconBgColor: const Color(0xFFFBE6E6),
+              iconColor: const Color(0xFFD64545),
+              title: 'Remove device',
+              titleColor: const Color(0xFFD64545),
+              subtitle: 'History is kept',
+              onTap: onRemoveDevice,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _divider(AppColors colors) => Container(
+        height: 1,
+        color: colors.border,
+      );
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.label,
+    this.subtitle,
+    required this.valueText,
+    this.valueColor,
+    this.isMonospace = false,
+  });
+
+  final String label;
+  final String? subtitle;
+  final String valueText;
+  final Color? valueColor;
+  final bool isMonospace;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 15,
+                    height: 20 / 15,
+                    fontWeight: FontWeight.w500,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle!,
+                    style: TextStyle(
+                      fontFamily: AppText.family,
+                      fontSize: 12,
+                      height: 18 / 12,
+                      fontWeight: FontWeight.w400,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            valueText,
+            style: TextStyle(
+              fontFamily: isMonospace ? 'JetBrains Mono' : AppText.family,
+              fontSize: isMonospace ? 12 : 13,
+              height: 16 / 12,
+              fontWeight: FontWeight.w500,
+              color: valueColor ?? colors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CustomInfoRow extends StatelessWidget {
+  const _CustomInfoRow({
+    required this.label,
+    this.subtitle,
+    required this.trailing,
+  });
+
+  final String label;
+  final String? subtitle;
+  final Widget trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 15,
+                    height: 20 / 15,
+                    fontWeight: FontWeight.w500,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle!,
+                    style: TextStyle(
+                      fontFamily: AppText.family,
+                      fontSize: 12,
+                      height: 18 / 12,
+                      fontWeight: FontWeight.w400,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          trailing,
+        ],
+      ),
+    );
+  }
+}
+
+class _ManageRow extends StatelessWidget {
+  const _ManageRow({
+    required this.iconSvg,
+    this.iconBgColor,
+    this.iconColor,
+    required this.title,
+    this.titleColor,
+    this.subtitle,
+    required this.onTap,
+  });
+
+  final String iconSvg;
+  final Color? iconBgColor;
+  final Color? iconColor;
+  final String title;
+  final Color? titleColor;
+  final String? subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = ComponentTheme.colors(context);
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconBgColor ?? colors.raised,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: SvgPicture.asset(
+                iconSvg,
+                width: 19,
+                height: 19,
+                colorFilter: ColorFilter.mode(
+                  iconColor ?? colors.textPrimary,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: AppText.family,
+                      fontSize: 15,
+                      height: 20 / 15,
+                      fontWeight: FontWeight.w500,
+                      color: titleColor ?? colors.textPrimary,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      style: TextStyle(
+                        fontFamily: AppText.family,
+                        fontSize: 12,
+                        height: 18 / 12,
+                        fontWeight: FontWeight.w400,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            SvgPicture.asset(
+              AppAssets.iconChevRight,
+              width: 18,
+              height: 18,
+              colorFilter: ColorFilter.mode(
+                colors.textSecondary,
+                BlendMode.srcIn,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PillBadge extends StatelessWidget {
+  const _PillBadge({
+    required this.text,
+    required this.iconAsset,
+    required this.textColor,
+    required this.bgColor,
+  });
+
+  final String text;
+  final String iconAsset;
+  final Color textColor;
+  final Color bgColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SvgPicture.asset(
+            iconAsset,
+            width: 13,
+            height: 13,
+            colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontFamily: AppText.family,
+              fontSize: 12,
+              height: 16 / 12,
+              fontWeight: FontWeight.w500,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _RenameSocketSheet extends StatefulWidget {
@@ -554,46 +1338,72 @@ class _RenameSocketSheet extends StatefulWidget {
 }
 
 class _RenameSocketSheetState extends State<_RenameSocketSheet> {
-  late final controller = TextEditingController(text: widget.initialName);
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialName);
 
   @override
   void dispose() {
-    controller.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom
-        .clamp(0.0, MediaQuery.sizeOf(context).height * 0.5);
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomInset),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Rename socket',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          8,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Rename socket',
+              style: TextStyle(
+                fontFamily: AppText.family,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              style: const TextStyle(fontFamily: AppText.family),
+              decoration: const InputDecoration(
+                labelText: 'Socket name',
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 14),
-              AppButton(
-                label: 'Save name',
-                onPressed: () {
-                  final value = controller.text.trim();
-                  if (value.isNotEmpty) Navigator.pop(context, value);
-                },
+            ),
+            const SizedBox(height: 14),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0E9F6E),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-            ],
-          ),
+              onPressed: () {
+                final trimmed = _controller.text.trim();
+                if (trimmed.isEmpty) return;
+                Navigator.pop(context, trimmed);
+              },
+              child: const Text(
+                'Save name',
+                style: TextStyle(
+                  fontFamily: AppText.family,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -608,65 +1418,68 @@ class _ChangeWifiSheet extends StatefulWidget {
 }
 
 class _ChangeWifiSheetState extends State<_ChangeWifiSheet> {
-  final form = GlobalKey<FormState>();
-  final network = TextEditingController();
-  final password = TextEditingController();
+  final _ssidController = TextEditingController(text: 'Home-WiFi');
+  final _passwordController = TextEditingController(text: 'password123');
 
   @override
   void dispose() {
-    network.dispose();
-    password.dispose();
+    _ssidController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom
-        .clamp(0.0, MediaQuery.sizeOf(context).height * 0.5);
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomInset),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Form(
-            key: form,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Change Wi-Fi',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: network,
-                  decoration: const InputDecoration(labelText: 'Wi-Fi name'),
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Enter a Wi-Fi name'
-                      : null,
-                ),
-                TextFormField(
-                  controller: password,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Wi-Fi password',
-                  ),
-                ),
-                const SizedBox(height: 14),
-                AppButton(
-                  label: 'Continue',
-                  onPressed: () {
-                    if (form.currentState!.validate()) {
-                      Navigator.pop(context, true);
-                    }
-                  },
-                ),
-              ],
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          8,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Change Wi-Fi',
+              style: TextStyle(
+                fontFamily: AppText.family,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _ssidController,
+              decoration: const InputDecoration(
+                labelText: 'Network name (SSID)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Wi-Fi Password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 14),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0E9F6E),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Update Wi-Fi credentials'),
+            ),
+          ],
         ),
       ),
     );
@@ -682,230 +1495,49 @@ class _TransferOwnershipDialog extends StatefulWidget {
 }
 
 class _TransferOwnershipDialogState extends State<_TransferOwnershipDialog> {
-  final form = GlobalKey<FormState>();
-  final email = TextEditingController();
+  final _emailController = TextEditingController();
 
   @override
   void dispose() {
-    email.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Transfer ownership?'),
-    content: Form(
-      key: form,
-      child: TextFormField(
-        controller: email,
-        keyboardType: TextInputType.emailAddress,
-        decoration: const InputDecoration(labelText: 'New owner email'),
-        validator: (value) => value == null || !value.contains('@')
-            ? 'Enter a valid email'
-            : null,
-      ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context, false),
-        child: const Text('Cancel'),
-      ),
-      AppButton(
-        fullWidth: false,
-        label: 'Transfer',
-        onPressed: () {
-          if (form.currentState!.validate()) Navigator.pop(context, true);
-        },
-      ),
-    ],
-  );
-}
-
-class _DetailSection extends StatelessWidget {
-  const _DetailSection(this.title);
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) => Text(
-    title,
-    style: const TextStyle(
-      color: SemsColors.muted,
-      fontSize: 10,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 0.8,
-    ),
-  );
-}
-
-class _ReadingTile extends StatelessWidget {
-  const _ReadingTile({
-    required this.label,
-    required this.value,
-    required this.unit,
-  });
-
-  final String label;
-  final String value;
-  final String unit;
-
-  @override
-  Widget build(BuildContext context) => AppCard(
-    padding: const EdgeInsets.all(8),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: SemsColors.muted, fontSize: 9),
-        ),
-        const Spacer(),
-        FittedBox(
-          alignment: Alignment.centerLeft,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (unit.length < 3 && unit.isNotEmpty) ...[
-                const SizedBox(width: 3),
-                Text(
-                  unit,
-                  style: const TextStyle(color: SemsColors.muted, fontSize: 9),
-                ),
-              ],
-            ],
-          ),
-        ),
-        if (unit.length >= 3)
-          Text(
-            unit,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: SemsColors.muted, fontSize: 8),
-          ),
-      ],
-    ),
-  );
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow(
-    this.label,
-    this.value, {
-    this.subtitle,
-    this.valueColor,
-    this.icon,
-    this.monospace = false,
-  });
-
-  final String label;
-  final String value;
-  final String? subtitle;
-  final Color? valueColor;
-  final IconData? icon;
-  final bool monospace;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-    child: Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 11)),
-              if (subtitle != null)
-                Text(
-                  subtitle!,
-                  style: const TextStyle(color: SemsColors.muted, fontSize: 9),
-                ),
-            ],
-          ),
-        ),
-        if (icon != null) ...[
-          Icon(icon, size: 14, color: valueColor ?? SemsColors.forest),
-          const SizedBox(width: 4),
-        ],
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: valueColor ?? SemsColors.ink,
-              fontSize: 10,
-              fontFamily: monospace ? 'monospace' : null,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _ManageRow extends StatelessWidget {
-  const _ManageRow({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-    this.subtitle,
-    this.destructive = false,
-  });
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final VoidCallback onTap;
-  final bool destructive;
-
-  @override
   Widget build(BuildContext context) {
-    final colors = ComponentTheme.colors(context);
-    return ListTile(
-      dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 0),
-      leading: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          color: destructive
-              ? ComponentTheme.tint(context, 'fault')
-              : colors.brandTint,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Icon(
-          icon,
-          size: 16,
-          color: destructive ? colors.statusFault : colors.brandPrimary,
-        ),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: destructive ? colors.statusFault : colors.textPrimary,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      subtitle: subtitle == null
-          ? null
-          : Text(
-              subtitle!,
-              style: const TextStyle(fontSize: 9, color: SemsColors.muted),
+    return AlertDialog(
+      title: const Text('Transfer ownership'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Enter the recipient email address. Once accepted, you will lose primary owner controls.',
+            style: TextStyle(fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _emailController,
+            decoration: const InputDecoration(
+              labelText: 'New owner email',
+              border: OutlineInputBorder(),
             ),
-      trailing: const Icon(Icons.chevron_right_rounded, size: 18),
-      onTap: onTap,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF0E9F6E),
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Send transfer invite'),
+        ),
+      ],
     );
   }
 }

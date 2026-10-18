@@ -126,6 +126,7 @@ class SemsAppliance {
     this.meterKwh,
     this.sessionKwh,
     this.sessionStartedAt,
+    this.sessionEndedAt,
     this.sessionStartMeterKwh,
   });
 
@@ -143,6 +144,7 @@ class SemsAppliance {
   final double? meterKwh;
   final double? sessionKwh;
   final String? sessionStartedAt;
+  final String? sessionEndedAt;
   final double? sessionStartMeterKwh;
 
   bool get archived => status == 'archived';
@@ -167,6 +169,7 @@ class SemsAlert {
     required this.severity,
     required this.category,
     required this.device,
+    this.note,
     this.acknowledged = false,
   });
   final String id;
@@ -176,6 +179,7 @@ class SemsAlert {
   final AlertSeverity severity;
   final AlertCategory category;
   final String device;
+  final String? note;
   final bool acknowledged;
 }
 

@@ -1,5 +1,5 @@
-// Implements Figma component: Status badge.
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/theme/app_radii.dart';
 import 'component_theme.dart';
@@ -12,12 +12,14 @@ class StatusBadge extends StatelessWidget {
     required this.label,
     this.tone = StatusTone.mute,
     this.icon,
+    this.svgAsset,
     this.compact = false,
   });
 
   final String label;
   final StatusTone tone;
   final IconData? icon;
+  final String? svgAsset;
   final bool compact;
 
   String get _toneName => switch (tone) {
@@ -49,7 +51,15 @@ class StatusBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
+          if (svgAsset != null) ...[
+            SvgPicture.asset(
+              svgAsset!,
+              width: 13,
+              height: 13,
+              colorFilter: ColorFilter.mode(foreground, BlendMode.srcIn),
+            ),
+            const SizedBox(width: 4),
+          ] else if (icon != null) ...[
             Icon(icon, size: 13, color: foreground),
             const SizedBox(width: 4),
           ],
