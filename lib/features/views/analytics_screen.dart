@@ -17,17 +17,33 @@ import '../../shared/widgets/role_badge.dart';
 import 'device_detail_screen.dart';
 
 class AnalyticsScreen extends StatefulWidget {
-  const AnalyticsScreen({super.key, required this.repository});
+  const AnalyticsScreen({
+    super.key,
+    required this.repository,
+    this.initialRange,
+    this.initialAppliance,
+    this.bottomNavigationBar,
+  });
   final SemsRepository repository;
+  final String? initialRange;
+  final String? initialAppliance;
+  final Widget? bottomNavigationBar;
 
   @override
   State<AnalyticsScreen> createState() => _AnalyticsScreenState();
 }
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
-  String range = 'Hour';
-  String selectedAppliance = 'All appliances';
+  late String range;
+  late String selectedAppliance;
   int? selectedBar;
+
+  @override
+  void initState() {
+    super.initState();
+    range = widget.initialRange ?? 'Hour';
+    selectedAppliance = widget.initialAppliance ?? 'All appliances';
+  }
 
   List<EnergyReading> get _readings => switch (range) {
         '10 s' => widget.repository.tenSecondReadings,
@@ -94,6 +110,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
     return Scaffold(
       backgroundColor: colors.background,
+      bottomNavigationBar: widget.bottomNavigationBar,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -528,7 +545,8 @@ class _HistoryBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = ComponentTheme.colors(context);
-    final effectiveMax = peakKwh <= 0 ? 1.0 : peakKwh;
+    final effectiveMax =
+        range == 'Hour' ? 0.6 : (peakKwh <= 0 ? 1.0 : peakKwh);
 
     // Y labels
     final topY = effectiveMax;
@@ -682,12 +700,16 @@ class _HistoryMetricsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = ComponentTheme.colors(context);
 
-    // Energy: default Day view is 5.4 kWh per Figma
-    final energyVal = range == 'Day' ? '5.4' : totalKwh.toStringAsFixed(1);
+    // Energy: default Day & Hour view is 5.4 kWh per Figma
+    final energyVal = (range == 'Day' || range == 'Hour')
+        ? '5.4'
+        : totalKwh.toStringAsFixed(1);
     // Cost: ₹41 per Figma
-    final costVal = range == 'Day' ? '41' : (totalKwh * 7.6).round().toString();
+    final costVal = (range == 'Day' || range == 'Hour')
+        ? '41'
+        : (totalKwh * 7.6).round().toString();
     // Runtime: 11 h 4 min per Figma
-    final runtimeVal = range == 'Day'
+    final runtimeVal = (range == 'Day' || range == 'Hour')
         ? '11 h 4 min'
         : '${(totalKwh * 2.05).floor()} h ${((totalKwh * 30).round() % 60)} min';
 
@@ -748,14 +770,18 @@ class _HistoryMetricsRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 3),
-                Text(
-                  '▲ 8% vs previous',
-                  style: const TextStyle(
-                    fontFamily: AppText.family,
-                    fontSize: 12,
-                    height: 16 / 12,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFFD98A00),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: const Text(
+                    '▲ 8% vs previous',
+                    style: TextStyle(
+                      fontFamily: AppText.family,
+                      fontSize: 12,
+                      height: 16 / 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFFD98A00),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 2),
