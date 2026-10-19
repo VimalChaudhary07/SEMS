@@ -76,6 +76,7 @@ flutter:
     - assets/figma/control/
     - assets/figma/splash/
     - assets/figma/icons/
+    - assets/figma/charts/
     - assets/fonts/Inter-OFL.txt
     - assets/fonts/JetBrainsMono-OFL.txt
 

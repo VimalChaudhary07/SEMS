@@ -76,4 +76,5 @@ abstract final class AppAssets {
   static const iconBulb = 'assets/figma/icons/bulb.svg';
   static const iconTv = 'assets/figma/icons/tv.svg';
   static const iconPause = 'assets/figma/icons/pause.svg';
+  static const aiForecastChart = 'assets/figma/charts/ai_forecast_chart.svg';
 }
