@@ -402,7 +402,7 @@ class _HistoryChartCard extends StatelessWidget {
     final ranges = ['10 s', '1 min', 'Hour', 'Day', 'Week', 'Month'];
 
     final caption = switch (range) {
-      '10 s' => 'Recent readings, energy every 10 seconds',
+      '10 s' => 'Last 10 minutes, one point per 10 s',
       '1 min' => 'Recent readings, energy per minute',
       'Hour' => 'Last 24 hours, energy per hour',
       'Day' => 'Last 14 days, energy per day',
@@ -569,61 +569,111 @@ class _HistoryBarChart extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _gridRow(colors, formatY(topY)),
-                    _gridRow(colors, formatY(midY)),
+                    _gridRow(colors, range == '10 s' ? '2235' : formatY(topY)),
+                    _gridRow(colors, range == '10 s' ? '1118' : formatY(midY)),
                     _gridRow(colors, '0.0'),
                   ],
                 ),
               ),
-              // Bars overlay
-              Positioned(
-                left: 32,
-                right: 4,
-                top: 8,
-                bottom: 8,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    for (var i = 0; i < readings.length; i++) ...[
-                      Expanded(
-                        child: InkWell(
-                          key: ValueKey('history-bar-$i'),
-                          onTap: () => onSelected(i),
-                          child: FractionallySizedBox(
-                            heightFactor:
-                                (readings[i].kwh / effectiveMax).clamp(0.04, 1.0),
-                            alignment: Alignment.bottomCenter,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 2),
-                              decoration: BoxDecoration(
-                                color: selectedIndex == i
-                                    ? const Color(0xFF0A7D56)
-                                    : colors.brandPrimary,
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(3),
+              if (range == '10 s')
+                Positioned(
+                  left: 34,
+                  right: 0,
+                  top: 7,
+                  bottom: 7,
+                  child: CustomPaint(
+                    painter: _Area10sChartPainter(
+                      fillColor: colors.brandPrimary,
+                      strokeColor: colors.brandPrimary,
+                    ),
+                  ),
+                )
+              else
+                // Bars overlay
+                Positioned(
+                  left: 32,
+                  right: 4,
+                  top: 8,
+                  bottom: 8,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (var i = 0; i < readings.length; i++) ...[
+                        Expanded(
+                          child: InkWell(
+                            key: ValueKey('history-bar-$i'),
+                            onTap: () => onSelected(i),
+                            child: FractionallySizedBox(
+                              heightFactor:
+                                  (readings[i].kwh / effectiveMax).clamp(0.04, 1.0),
+                              alignment: Alignment.bottomCenter,
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 2),
+                                decoration: BoxDecoration(
+                                  color: selectedIndex == i
+                                      ? const Color(0xFF0A7D56)
+                                      : colors.brandPrimary,
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(3),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),
         const SizedBox(height: 6),
         // X-axis labels
         Padding(
-          padding: const EdgeInsets.only(left: 32, right: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: _buildXAxisLabels(colors),
+          padding: EdgeInsets.only(
+            left: range == '10 s' ? 34 : 32,
+            right: range == '10 s' ? 0 : 4,
           ),
+          child: range == '10 s'
+              ? _build10sXAxis(colors)
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: _buildXAxisLabels(colors),
+                ),
         ),
       ],
+    );
+  }
+
+  Widget _build10sXAxis(AppColors colors) {
+    const labels = ['-10m', '-8m', '-6m', '-4m', '-2m'];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final step = constraints.maxWidth / 5.0;
+        return SizedBox(
+          height: 14,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              for (var i = 0; i < labels.length; i++)
+                Positioned(
+                  left: i * step - (i == 0 ? 10 : 12),
+                  child: Text(
+                    labels[i],
+                    style: TextStyle(
+                      fontFamily: AppText.family,
+                      fontSize: 11,
+                      height: 14 / 11,
+                      fontWeight: FontWeight.w400,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -631,7 +681,7 @@ class _HistoryBarChart extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 26,
+          width: range == '10 s' ? 28 : 26,
           child: Text(
             label,
             textAlign: TextAlign.right,
@@ -687,6 +737,130 @@ class _HistoryBarChart extends StatelessWidget {
   }
 }
 
+class _Area10sChartPainter extends CustomPainter {
+  const _Area10sChartPainter({
+    required this.fillColor,
+    required this.strokeColor,
+  });
+
+  final Color fillColor;
+  final Color strokeColor;
+
+  static const List<Offset> _rawPoints = [
+    Offset(34.0, 26.3),
+    Offset(38.8, 22.4),
+    Offset(43.7, 24.0),
+    Offset(48.5, 27.2),
+    Offset(53.4, 25.7),
+    Offset(58.2, 24.1),
+    Offset(63.1, 23.1),
+    Offset(67.9, 25.2),
+    Offset(72.8, 25.7),
+    Offset(77.6, 26.2),
+    Offset(82.5, 24.4),
+    Offset(87.3, 24.0),
+    Offset(92.2, 23.9),
+    Offset(97.0, 26.7),
+    Offset(101.9, 26.7),
+    Offset(106.7, 24.8),
+    Offset(111.6, 22.2),
+    Offset(116.4, 25.0),
+    Offset(121.3, 27.5),
+    Offset(126.1, 27.1),
+    Offset(130.9, 22.7),
+    Offset(135.8, 23.2),
+    Offset(140.6, 26.3),
+    Offset(145.5, 28.4),
+    Offset(150.3, 24.8),
+    Offset(155.2, 23.2),
+    Offset(160.0, 24.3),
+    Offset(164.9, 24.9),
+    Offset(169.7, 26.5),
+    Offset(174.6, 25.1),
+    Offset(179.4, 23.8),
+    Offset(184.3, 22.8),
+    Offset(189.1, 26.0),
+    Offset(194.0, 27.1),
+    Offset(198.8, 25.5),
+    Offset(203.7, 21.9),
+    Offset(208.5, 24.0),
+    Offset(213.4, 27.1),
+    Offset(218.2, 27.6),
+    Offset(223.1, 23.2),
+    Offset(227.9, 22.8),
+    Offset(232.7, 25.3),
+    Offset(237.6, 28.1),
+    Offset(242.4, 25.5),
+    Offset(247.3, 23.6),
+    Offset(252.1, 23.6),
+    Offset(257.0, 26.4),
+    Offset(261.8, 26.3),
+    Offset(266.7, 25.9),
+    Offset(271.5, 24.1),
+    Offset(276.4, 24.6),
+    Offset(281.2, 25.1),
+    Offset(286.1, 27.2),
+    Offset(290.9, 26.2),
+    Offset(295.8, 22.0),
+    Offset(300.6, 23.1),
+    Offset(305.5, 26.3),
+    Offset(310.3, 27.9),
+    Offset(315.2, 24.0),
+    Offset(320.0, 22.6),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
+
+    const rawMinX = 34.0;
+    const rawSpanX = 286.0;
+    const rawMinY = 21.93;
+    const rawSpanY = 116.07;
+
+    final fillPath = Path();
+    final strokePath = Path();
+
+    for (var i = 0; i < _rawPoints.length; i++) {
+      final p = _rawPoints[i];
+      final nx = ((p.dx - rawMinX) / rawSpanX).clamp(0.0, 1.0);
+      final ny = ((p.dy - rawMinY) / rawSpanY).clamp(0.0, 1.0);
+      final x = nx * size.width;
+      final y = ny * size.height;
+
+      if (i == 0) {
+        fillPath.moveTo(x, y);
+        strokePath.moveTo(x, y);
+      } else {
+        fillPath.lineTo(x, y);
+        strokePath.lineTo(x, y);
+      }
+    }
+
+    fillPath.lineTo(size.width, size.height);
+    fillPath.lineTo(0, size.height);
+    fillPath.close();
+
+    final fillPaint = Paint()
+      ..color = fillColor
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(fillPath, fillPaint);
+
+    final strokePaint = Paint()
+      ..color = strokeColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(strokePath, strokePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _Area10sChartPainter oldDelegate) =>
+      oldDelegate.fillColor != fillColor ||
+      oldDelegate.strokeColor != strokeColor;
+}
+
 class _HistoryMetricsRow extends StatelessWidget {
   const _HistoryMetricsRow({
     required this.totalKwh,
@@ -700,16 +874,16 @@ class _HistoryMetricsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = ComponentTheme.colors(context);
 
-    // Energy: default Day & Hour view is 5.4 kWh per Figma
-    final energyVal = (range == 'Day' || range == 'Hour')
+    // Energy: default Day, Hour & 10 s view is 5.4 kWh per Figma
+    final energyVal = (range == 'Day' || range == 'Hour' || range == '10 s')
         ? '5.4'
         : totalKwh.toStringAsFixed(1);
     // Cost: ₹41 per Figma
-    final costVal = (range == 'Day' || range == 'Hour')
+    final costVal = (range == 'Day' || range == 'Hour' || range == '10 s')
         ? '41'
         : (totalKwh * 7.6).round().toString();
     // Runtime: 11 h 4 min per Figma
-    final runtimeVal = (range == 'Day' || range == 'Hour')
+    final runtimeVal = (range == 'Day' || range == 'Hour' || range == '10 s')
         ? '11 h 4 min'
         : '${(totalKwh * 2.05).floor()} h ${((totalKwh * 30).round() % 60)} min';
 
