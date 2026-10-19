@@ -143,7 +143,10 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           Padding(
             padding: EdgeInsets.only(
               left: 8,
-              right: _status == BackupScreenStatus.familyOwnerOnly ? 8 : 16,
+              right: (_status == BackupScreenStatus.familyOwnerOnly ||
+                      _isRestoreFlow)
+                  ? 8
+                  : 16,
             ),
             child: SizedBox(
               height: 56,
@@ -171,9 +174,9 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          'Backup',
-                          style: TextStyle(
+                        Text(
+                          _topBarTitle,
+                          style: const TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 20,
                             fontWeight: FontWeight.w600,
@@ -181,13 +184,9 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                             height: 1.2,
                           ),
                         ),
-                        if (_status != BackupScreenStatus.familyOwnerOnly)
+                        if (_topBarSubtitle != null)
                           Text(
-                            (_status == BackupScreenStatus.notConnected ||
-                                    _status ==
-                                        BackupScreenStatus.googleAccountChooser)
-                                ? 'Not connected'
-                                : 'Google Drive',
+                            _topBarSubtitle!,
                             style: const TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 12,
@@ -260,11 +259,16 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                 16,
                 4,
                 16,
-                _status == BackupScreenStatus.familyOwnerOnly ? 0 : 24,
+                (_status == BackupScreenStatus.familyOwnerOnly ||
+                        _status == BackupScreenStatus.restore1FindBackup)
+                    ? 0
+                    : 24,
               ),
               child: _buildContent(),
             ),
           ),
+          if (_status == BackupScreenStatus.restore1FindBackup)
+            _buildRestore1Footer(),
         ],
       ),
     );
@@ -327,6 +331,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         return _buildDriveAccountUnavailableContent();
       case BackupScreenStatus.familyOwnerOnly:
         return _buildFamilyOwnerOnlyContent();
+      case BackupScreenStatus.restore1FindBackup:
+        return _buildRestore1FindBackupContent();
       case BackupScreenStatus.manualBackupSheet:
       case BackupScreenStatus.verifyResultSheet:
       case BackupScreenStatus.connected:
@@ -2491,6 +2497,285 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             color: Color(0xFF0F1714),
           ),
         ),
+      ),
+    );
+  }
+
+  bool get _isRestoreFlow {
+    switch (_status) {
+      case BackupScreenStatus.restore1FindBackup:
+      case BackupScreenStatus.restore2Validating:
+      case BackupScreenStatus.restore3Review:
+      case BackupScreenStatus.restore4Restoring:
+      case BackupScreenStatus.restore5Done:
+      case BackupScreenStatus.restoreErrorNoBackup:
+      case BackupScreenStatus.restoreErrorSchemaMismatch:
+      case BackupScreenStatus.restoreErrorChecksumFailed:
+      case BackupScreenStatus.restoreErrorGoogleAccountUnavailable:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  String get _topBarTitle {
+    if (_isRestoreFlow) {
+      return 'Restore from backup';
+    }
+    return 'Backup';
+  }
+
+  String? get _topBarSubtitle {
+    if (_status == BackupScreenStatus.familyOwnerOnly) {
+      return null;
+    }
+    switch (_status) {
+      case BackupScreenStatus.restore1FindBackup:
+        return 'Step 1 of 4';
+      case BackupScreenStatus.restore2Validating:
+        return 'Step 2 of 4';
+      case BackupScreenStatus.restore3Review:
+        return 'Step 3 of 4';
+      case BackupScreenStatus.restore4Restoring:
+        return 'Step 4 of 4';
+      case BackupScreenStatus.restore5Done:
+        return 'Restore complete';
+      case BackupScreenStatus.notConnected:
+      case BackupScreenStatus.googleAccountChooser:
+        return 'Not connected';
+      default:
+        return 'Google Drive';
+    }
+  }
+
+  Widget _buildRestore1FindBackupContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 4-step progress bar (height 4px + 20px bottom spacing)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0E9F6E),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE1E9E5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE1E9E5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE1E9E5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Title: Find your backup (22 Bold, #0F1714)
+        const Text(
+          'Find your backup',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF0F1714),
+            height: 28 / 22,
+          ),
+        ),
+        const SizedBox(height: 4),
+
+        // Subtitle: Sign in with the Google account you used before. (14 Regular, #55625D)
+        const Text(
+          'Sign in with the Google account you used before.',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF55625D),
+            height: 20 / 14,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Group Card: 2 rows
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE1E9E5)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color.fromRGBO(16, 22, 20, 0.05),
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+              BoxShadow(
+                color: Color.fromRGBO(16, 22, 20, 0.05),
+                blurRadius: 14,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildRestoreAccountRow(
+                title: 'asha.verma@gmail.com',
+                onTap: () {},
+              ),
+              Container(
+                height: 1,
+                color: const Color(0xFFE1E9E5),
+              ),
+              _buildRestoreAccountRow(
+                title: 'Use another account',
+                onTap: () {},
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRestoreAccountRow({
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF1EE),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: SvgPicture.asset(
+                AppAssets.iconUser,
+                width: 19,
+                height: 19,
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFF55625D),
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF0F1714),
+                  height: 20 / 15,
+                ),
+              ),
+            ),
+            SvgPicture.asset(
+              AppAssets.iconChevRight,
+              width: 18,
+              height: 18,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF55625D),
+                BlendMode.srcIn,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRestore1Footer() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFFF4F7F6),
+        border: Border(
+          top: BorderSide(
+            color: Color(0xFFE1E9E5),
+            width: 1,
+          ),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _status = BackupScreenStatus.restore2Validating;
+              });
+            },
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0E9F6E),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'Search Drive for SEMS backup',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: Container(
+              width: 112,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F1714),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
       ),
     );
   }
