@@ -2089,61 +2089,72 @@ class AiInsightDetailsSheet extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 27),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Drag handle
+          // Drag handle (40x4 in 10px 0px 4px frame)
           Center(
-            child: Container(
-              width: 38,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD9DEDC),
-                borderRadius: BorderRadius.circular(999),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 4),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE1E9E5),
+                  borderRadius: BorderRadius.circular(999),
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 16),
 
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Potential Saving',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F1714),
-                ),
-              ),
-              GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: SvgPicture.asset(
-                  AppAssets.iconClose,
-                  width: 20,
-                  height: 20,
-                  colorFilter: const ColorFilter.mode(
-                    Color(0xFF55625D),
-                    BlendMode.srcIn,
+          // Header (4px 0px 8px padding)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Potential Saving',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                    height: 1.33,
                   ),
                 ),
-              ),
-            ],
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    child: SvgPicture.asset(
+                      AppAssets.iconClose,
+                      width: 20,
+                      height: 20,
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFF55625D),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 2),
 
-          // Badges
+          // Badges (gap: 6px)
           Row(
             children: [
               Container(
                 height: 24,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEBF5FF),
+                  color: const Color(0xFFE3ECFD),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
@@ -2154,7 +2165,7 @@ class AiInsightDetailsSheet extends StatelessWidget {
                       width: 13,
                       height: 13,
                       colorFilter: const ColorFilter.mode(
-                        Color(0xFF1E429F),
+                        Color(0xFF2F6FED),
                         BlendMode.srcIn,
                       ),
                     ),
@@ -2165,44 +2176,58 @@ class AiInsightDetailsSheet extends StatelessWidget {
                         fontFamily: 'Inter',
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF1E429F),
+                        color: Color(0xFF2F6FED),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               const _EstimatedBadge(),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
           // Title
           const Text(
             'Reduce heater usage 1 hr/day',
             style: TextStyle(
               fontFamily: 'Inter',
-              fontSize: 18,
+              fontSize: 17,
               fontWeight: FontWeight.w600,
               color: Color(0xFF0F1714),
+              height: 1.41,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 6),
 
           // Metrics table
           Container(
             decoration: BoxDecoration(
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFE1E9E5)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color.fromRGBO(16, 22, 20, 0.05),
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
+                BoxShadow(
+                  color: Color.fromRGBO(16, 22, 20, 0.05),
+                  blurRadius: 14,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               children: [
                 _buildMetricRow('Per day', '₹20'),
-                const Divider(height: 1, color: Color(0xFFE1E9E5)),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
                 _buildMetricRow('Per month', '₹600'),
-                const Divider(height: 1, color: Color(0xFFE1E9E5)),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
                 _buildMetricRow('Energy per month', '60 kWh'),
-                const Divider(height: 1, color: Color(0xFFE1E9E5)),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
                 _buildMetricRow('Share of daily use', '25.0%'),
               ],
             ),
@@ -2217,20 +2242,21 @@ class AiInsightDetailsSheet extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: Color(0xFF0F1714),
+              height: 1.38,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 12),
           const Text(
-            'Heater runs about 4 h/day against a 2 h/day baseline. Costs use your tariff of ₹7.7 per kWh on average. All figures are estimates.',
+            'Heater runs about 4 h/day against a 2 h/day baseline.\nCosts use your tariff of ₹7.7 per kWh on average.\nAll figures are estimates.',
             style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 13,
               fontWeight: FontWeight.w400,
               color: Color(0xFF55625D),
-              height: 1.4,
+              height: 1.54,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 9),
 
           // Action buttons
           SizedBox(
@@ -2256,7 +2282,7 @@ class AiInsightDetailsSheet extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -2286,30 +2312,35 @@ class AiInsightDetailsSheet extends StatelessWidget {
   }
 
   Widget _buildMetricRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: Color(0xFF0F1714),
+    return SizedBox(
+      height: 56,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF0F1714),
+                height: 1.33,
+              ),
             ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF0F1714),
+            Text(
+              value,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF0F1714),
+                height: 1.38,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
