@@ -11,19 +11,28 @@ import '../../data/repositories/sems_repository.dart';
 import '../../shared/widgets/sems_widgets.dart';
 
 class AlertsScreen extends StatefulWidget {
-  const AlertsScreen({super.key, required this.repository});
+  const AlertsScreen({
+    super.key,
+    required this.repository,
+    this.initialFilter,
+    this.bottomNavigationBar,
+  });
   final SemsRepository repository;
+  final String? initialFilter;
+  final Widget? bottomNavigationBar;
+
   @override
   State<AlertsScreen> createState() => _AlertsScreenState();
 }
 
 class _AlertsScreenState extends State<AlertsScreen> {
-  String selected = 'All';
+  late String selected;
   late Future<AlertPreferences> _preferences;
 
   @override
   void initState() {
     super.initState();
+    selected = widget.initialFilter ?? 'All';
     _preferences = widget.repository.getAlertPreferences();
   }
 
@@ -50,6 +59,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
         .length;
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7F6),
+      bottomNavigationBar: widget.bottomNavigationBar,
       appBar: AppBar(
         backgroundColor: const Color(0xFFF4F7F6),
         elevation: 0,
