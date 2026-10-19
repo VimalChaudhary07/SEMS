@@ -17,11 +17,13 @@ class AlertsScreen extends StatefulWidget {
     this.initialFilter,
     this.bottomNavigationBar,
     this.showTrippedBanner,
+    this.showEmptyState = false,
   });
   final SemsRepository repository;
   final String? initialFilter;
   final Widget? bottomNavigationBar;
   final bool? showTrippedBanner;
+  final bool showEmptyState;
 
   @override
   State<AlertsScreen> createState() => _AlertsScreenState();
@@ -49,16 +51,20 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final alerts = widget.repository.alerts
-        .where(
-          (alert) => selected == 'All'
-              ? alert.category != AlertCategory.ai
-              : _filterFor(alert) == selected,
-        )
-        .toList();
-    final newCount = widget.repository.alerts
-        .where((a) => !a.acknowledged && a.category != AlertCategory.ai)
-        .length;
+    final alerts = widget.showEmptyState
+        ? const <SemsAlert>[]
+        : widget.repository.alerts
+            .where(
+              (alert) => selected == 'All'
+                  ? alert.category != AlertCategory.ai
+                  : _filterFor(alert) == selected,
+            )
+            .toList();
+    final newCount = widget.showEmptyState
+        ? 0
+        : widget.repository.alerts
+            .where((a) => !a.acknowledged && a.category != AlertCategory.ai)
+            .length;
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7F6),
       bottomNavigationBar: widget.bottomNavigationBar,
@@ -179,11 +185,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
               },
             ),
           if (alerts.isEmpty)
-            const EmptyState(
-              title: 'No alerts in this category',
-              message: 'You are all caught up.',
-              icon: Icons.notifications_off_outlined,
-            ),
+            const _AlertsEmptyState(),
           for (final alert in alerts)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -970,6 +972,63 @@ class _QuietHoursBanner extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AlertsEmptyState extends StatelessWidget {
+  const _AlertsEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 96,
+            height: 96,
+            decoration: const BoxDecoration(
+              color: Color(0xFFEAF1EE),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: SvgPicture.asset(
+                AppAssets.iconShield,
+                width: 34,
+                height: 34,
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFF0E9F6E),
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'No alerts',
+            style: TextStyle(
+              fontFamily: AppText.family,
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF0F1714),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Everything looks normal. We will tell you when something needs attention.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: AppText.family,
+              fontSize: 14,
+              height: 20 / 14,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF55625D),
             ),
           ),
         ],
