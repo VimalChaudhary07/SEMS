@@ -80,6 +80,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
   bool _dailyBackup = true;
   bool _weeklyCheckpoint = true;
   bool _backupOnChanges = true;
+  int _selectedManualBackupOption = 0;
 
   @override
   void initState() {
@@ -268,7 +269,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
       ),
     );
 
-    if (_status == BackupScreenStatus.googleAccountChooser) {
+    if (_status == BackupScreenStatus.googleAccountChooser ||
+        _status == BackupScreenStatus.manualBackupSheet) {
       return Scaffold(
         backgroundColor: const Color(0xFFF4F7F6),
         bottomNavigationBar: widget.bottomNavigationBar,
@@ -279,7 +281,9 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
               child: GestureDetector(
                 onTap: () {
                   setState(() {
-                    _status = BackupScreenStatus.notConnected;
+                    _status = _status == BackupScreenStatus.googleAccountChooser
+                        ? BackupScreenStatus.notConnected
+                        : BackupScreenStatus.connected;
                   });
                 },
                 child: Container(
@@ -291,7 +295,9 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
               left: 0,
               right: 0,
               bottom: 0,
-              child: _buildGoogleAccountChooserSheet(),
+              child: _status == BackupScreenStatus.googleAccountChooser
+                  ? _buildGoogleAccountChooserSheet()
+                  : _buildManualBackupSheet(),
             ),
           ],
         ),
@@ -318,6 +324,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         return _buildDriveAccountUnavailableContent();
       case BackupScreenStatus.familyOwnerOnly:
         return _buildFamilyOwnerOnlyContent();
+      case BackupScreenStatus.manualBackupSheet:
       case BackupScreenStatus.connected:
       default:
         return _buildConnectedContent();
@@ -598,6 +605,224 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildManualBackupSheet() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Grab handle (18px)
+          Padding(
+            padding: const EdgeInsets.only(top: 10, bottom: 4),
+            child: Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE1E9E5),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+          ),
+
+          // Header row (52px)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: SizedBox(
+              height: 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Manual backup',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F1714),
+                      height: 24 / 18,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _status = BackupScreenStatus.connected;
+                      });
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      child: SvgPicture.asset(
+                        AppAssets.iconClose,
+                        width: 20,
+                        height: 20,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF0F1714),
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Radio options group
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildManualBackupRadioOption(
+                index: 0,
+                title: 'Full account',
+                subtitle: 'Everything listed in the backup contents',
+              ),
+              const SizedBox(height: 12),
+              _buildManualBackupRadioOption(
+                index: 1,
+                title: 'Selected data',
+                subtitle: 'Choose appliances, sockets or a date range',
+              ),
+              const SizedBox(height: 12),
+              _buildManualBackupRadioOption(
+                index: 2,
+                title: 'Export ZIP file',
+                subtitle: 'Save a copy on this phone instead',
+              ),
+              const SizedBox(height: 12),
+
+              // Button "Start backup" (48px)
+              GestureDetector(
+                onTap: widget.onBackupNow ?? () {},
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0E9F6E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        AppAssets.iconUpload,
+                        width: 18,
+                        height: 18,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Start backup',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildManualBackupRadioOption({
+    required int index,
+    required String title,
+    required String subtitle,
+  }) {
+    final isSelected = _selectedManualBackupOption == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedManualBackupOption = index;
+        });
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFDDF4EA) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF0E9F6E) : const Color(0xFFE1E9E5),
+            width: 1,
+          ),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFF0E9F6E)
+                      : const Color(0xFFE1E9E5),
+                  width: 2,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: isSelected
+                  ? Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF0E9F6E),
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF0F1714),
+                      height: 20 / 14,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF55625D),
+                      height: 18 / 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
