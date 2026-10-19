@@ -242,11 +242,14 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
     switch (_status) {
       case BackupScreenStatus.notConnected:
         return _buildNotConnectedContent();
+      case BackupScreenStatus.syncing:
+        return _buildSyncingContent();
       case BackupScreenStatus.connected:
       default:
         return _buildConnectedContent();
     }
   }
+
 
   Widget _buildNotConnectedContent() {
     return Column(
@@ -294,7 +297,97 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
     );
   }
 
-  Widget _buildDriveStatusCard() {
+  Widget _buildSyncingContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildSyncingBanner(),
+        const SizedBox(height: 16),
+        _buildDriveStatusCard(isSyncing: true),
+        const SizedBox(height: 16),
+        _buildScheduleSection(),
+        const SizedBox(height: 16),
+        _buildBackupContentsSection(),
+        const SizedBox(height: 16),
+        _buildRestoreFromBackupButton(),
+        const SizedBox(height: 16),
+        _buildDisconnectDriveButton(),
+        const SizedBox(height: 16),
+        _buildFooterInfoNote(),
+        const SizedBox(height: 14),
+        Center(
+          child: Container(
+            width: 112,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F1714),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+      ],
+    );
+  }
+
+  Widget _buildSyncingBanner() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFE3ECFD),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF2F6FED)),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: SvgPicture.asset(
+              AppAssets.iconRefresh,
+              width: 19,
+              height: 19,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF2F6FED),
+                BlendMode.srcIn,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Backup in progress',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                    height: 1.54,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Uploading 14 pending batches… 62%',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF55625D),
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDriveStatusCard({bool isSyncing = false}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -464,45 +557,71 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
               ),
             ],
           ),
+          if (isSyncing) ...[
+            const SizedBox(height: 14),
+            Container(
+              height: 8,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF1EE),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: 0.62,
+                child: Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2F6FED),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
                 child: SizedBox(
                   height: 48,
-                  child: ElevatedButton(
-                    onPressed: widget.onBackupNow ?? () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0E9F6E),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  child: Opacity(
+                    opacity: isSyncing ? 0.45 : 1.0,
+                    child: ElevatedButton(
+                      onPressed: isSyncing ? null : (widget.onBackupNow ?? () {}),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0E9F6E),
+                        disabledBackgroundColor: const Color(0xFF0E9F6E),
+                        disabledForegroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SvgPicture.asset(
-                          AppAssets.iconUpload,
-                          width: 18,
-                          height: 18,
-                          colorFilter: const ColorFilter.mode(
-                            Colors.white,
-                            BlendMode.srcIn,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SvgPicture.asset(
+                            AppAssets.iconUpload,
+                            width: 18,
+                            height: 18,
+                            colorFilter: const ColorFilter.mode(
+                              Colors.white,
+                              BlendMode.srcIn,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Back up now',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Back up now',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
