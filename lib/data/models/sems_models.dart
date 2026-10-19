@@ -170,6 +170,9 @@ class SemsAlert {
     required this.category,
     required this.device,
     this.note,
+    this.nextAction,
+    this.seenNote,
+    this.badgeLabel,
     this.acknowledged = false,
   });
   final String id;
@@ -180,6 +183,9 @@ class SemsAlert {
   final AlertCategory category;
   final String device;
   final String? note;
+  final String? nextAction;
+  final String? seenNote;
+  final String? badgeLabel;
   final bool acknowledged;
 }
 

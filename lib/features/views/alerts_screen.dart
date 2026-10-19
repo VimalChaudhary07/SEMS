@@ -136,50 +136,48 @@ class _AlertsScreenState extends State<AlertsScreen> {
               ],
             ),
           ),
-          if (selected == 'AI') ...[
-            const SizedBox(height: 12),
-            const AppCard(
-              child: Text(
-                'AI alerts are estimates based on local sample history; they are informational, not electrical faults.',
-                style: TextStyle(color: SemsColors.muted, fontSize: 12),
-              ),
-            ),
-          ],
-          FutureBuilder<AlertPreferences>(
-            future: _preferences,
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: AppCard(
-                    child: Text(
-                      'Unable to load alert preferences: ${snapshot.error}',
-                      style: const TextStyle(color: SemsColors.red, fontSize: 12),
-                    ),
-                  ),
-                );
-              }
-              return snapshot.data?.muteNonCriticalAlerts == true
-                  ? Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: AppCard(
-                        child: Text(
-                          'Quiet hours are on (${snapshot.data!.quietHoursStart} to ${snapshot.data!.quietHoursEnd}). Critical safety alerts always come through.',
-                          style: const TextStyle(
-                            color: SemsColors.muted,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    )
-                  : const SizedBox.shrink();
-            },
-          ),
           const SizedBox(height: 12),
+          if (selected == 'AI') ...[
+            const _AiEstimateBanner(),
+            const SizedBox(height: 10),
+            const _QuietHoursBanner(),
+            const SizedBox(height: 10),
+          ],
           if (selected == 'Electrical' && (widget.showTrippedBanner ?? true)) ...[
             const _TrippedBanner(),
             const SizedBox(height: 10),
           ],
+          if (selected != 'AI')
+            FutureBuilder<AlertPreferences>(
+              future: _preferences,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: AppCard(
+                      child: Text(
+                        'Unable to load alert preferences: ${snapshot.error}',
+                        style: const TextStyle(color: SemsColors.red, fontSize: 12),
+                      ),
+                    ),
+                  );
+                }
+                return snapshot.data?.muteNonCriticalAlerts == true
+                    ? Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: AppCard(
+                          child: Text(
+                            'Quiet hours are on (${snapshot.data!.quietHoursStart} to ${snapshot.data!.quietHoursEnd}). Critical safety alerts always come through.',
+                            style: const TextStyle(
+                              color: SemsColors.muted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink();
+              },
+            ),
           if (alerts.isEmpty)
             const EmptyState(
               title: 'No alerts in this category',
@@ -201,13 +199,24 @@ class _AlertsScreenState extends State<AlertsScreen> {
     );
   }
 
-  int _countFor(String filter) => widget.repository.alerts
-      .where(
-        (alert) => filter == 'All'
-            ? alert.category != AlertCategory.ai
-            : _filterFor(alert) == filter,
-      )
-      .length;
+  int _countFor(String filter) {
+    if (filter == 'All') {
+      return widget.repository.alerts
+          .where((alert) => alert.category != AlertCategory.ai)
+          .length;
+    }
+    if (filter == 'AI') {
+      return widget.repository.alerts
+          .where(
+            (alert) =>
+                alert.category == AlertCategory.ai && !alert.acknowledged,
+          )
+          .length;
+    }
+    return widget.repository.alerts
+        .where((alert) => _filterFor(alert) == filter)
+        .length;
+  }
 
   static String _filterFor(SemsAlert alert) => switch (alert.category) {
     AlertCategory.electrical => 'Electrical',
@@ -290,28 +299,31 @@ class _AlertCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (accentColor, badgeBg, badgeTextColor, badgeIcon, badgeLabel) =
+    final String label = alert.badgeLabel ??
         switch (alert.severity) {
+          AlertSeverity.critical => 'Critical',
+          AlertSeverity.warning => 'Warning',
+          AlertSeverity.info => 'Info',
+        };
+    final String badgeIcon =
+        (alert.badgeLabel == 'LOW' || alert.severity == AlertSeverity.info)
+            ? AppAssets.iconInfo
+            : AppAssets.iconAlert;
+    final (accentColor, badgeBg, badgeTextColor) = switch (alert.severity) {
       AlertSeverity.critical => (
         const Color(0xFFD64545),
         const Color(0xFFFBE6E6),
         const Color(0xFFD64545),
-        AppAssets.iconAlert,
-        'Critical',
       ),
       AlertSeverity.warning => (
         const Color(0xFFD98A00),
         const Color(0xFFFCF0D9),
         const Color(0xFFD98A00),
-        AppAssets.iconAlert,
-        'Warning',
       ),
       AlertSeverity.info => (
         const Color(0xFF2F6FED),
         const Color(0xFFE3ECFD),
         const Color(0xFF2F6FED),
-        AppAssets.iconInfo,
-        'Info',
       ),
     };
 
@@ -371,7 +383,7 @@ class _AlertCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                badgeLabel,
+                                label,
                                 style: TextStyle(
                                   color: badgeTextColor,
                                   fontSize: 12,
@@ -446,6 +458,32 @@ class _AlertCard extends StatelessWidget {
                         height: 1.33,
                       ),
                     ),
+                    if (alert.seenNote != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SvgPicture.asset(
+                            AppAssets.iconRefresh,
+                            width: 12,
+                            height: 12,
+                            colorFilter: const ColorFilter.mode(
+                              Color(0xFF55625D),
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            alert.seenNote!,
+                            style: const TextStyle(
+                              color: Color(0xFF55625D),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     if (alert.note != null) ...[
                       const SizedBox(height: 6),
                       Row(
@@ -482,6 +520,32 @@ class _AlertCard extends StatelessWidget {
                         height: 1.54,
                       ),
                     ),
+                    if (alert.nextAction != null) ...[
+                      const SizedBox(height: 6),
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: 'Next: ',
+                              style: TextStyle(
+                                color: Color(0xFF0F1714),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            TextSpan(
+                              text: alert.nextAction!,
+                              style: const TextStyle(
+                                color: Color(0xFF55625D),
+                                fontSize: 13,
+                                height: 1.54,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     if (!isAcknowledged) ...[
                       const SizedBox(height: 10),
                       InkWell(
@@ -779,6 +843,124 @@ class _TrippedBanner extends StatelessWidget {
                 SizedBox(height: 2),
                 Text(
                   'Relay turned OFF. Recovering in 42 s (attempt 1 of 3).',
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 12,
+                    height: 18 / 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF55625D),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AiEstimateBanner extends StatelessWidget {
+  const _AiEstimateBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFECE6FB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF7C5CE0)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SvgPicture.asset(
+            AppAssets.iconSparkle,
+            width: 19,
+            height: 19,
+            colorFilter: const ColorFilter.mode(
+              Color(0xFF7C5CE0),
+              BlendMode.srcIn,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Estimated, calculated on your phone',
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 13,
+                    height: 20 / 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'AI levels are INFO, LOW, WARNING and HIGH. Critical is only used for socket safety trips.',
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 12,
+                    height: 18 / 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF55625D),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuietHoursBanner extends StatelessWidget {
+  const _QuietHoursBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE3ECFD),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF2F6FED)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SvgPicture.asset(
+            AppAssets.iconMoon,
+            width: 19,
+            height: 19,
+            colorFilter: const ColorFilter.mode(
+              Color(0xFF2F6FED),
+              BlendMode.srcIn,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Quiet hours are on',
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 13,
+                    height: 20 / 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  '22:00 to 06:00. Only HIGH alerts break quiet hours.',
                   style: TextStyle(
                     fontFamily: AppText.family,
                     fontSize: 12,
