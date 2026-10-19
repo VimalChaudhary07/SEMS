@@ -1566,7 +1566,7 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                     ),
                     if (_kind == 'countdown') ...[
                       const SizedBox(height: 20),
-                      _sectionLabel('Run for (minutes)'),
+                      _sectionLabel('Turn OFF after'),
                       const SizedBox(height: 8),
                       Container(
                         height: 48,
@@ -1576,24 +1576,50 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                           border: Border.all(color: const Color(0xFFE1E9E5)),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        alignment: Alignment.centerLeft,
-                        child: TextFormField(
-                          controller: _countdown,
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(
-                            fontFamily: AppText.family,
-                            fontSize: 15,
-                            height: 20 / 15,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF0F1714),
-                          ),
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
-                          ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _countdown,
+                                keyboardType: TextInputType.number,
+                                style: const TextStyle(
+                                  fontFamily: AppText.family,
+                                  fontSize: 15,
+                                  height: 20 / 15,
+                                  fontWeight: FontWeight.w400,
+                                  color: Color(0xFF0F1714),
+                                ),
+                                decoration: const InputDecoration(
+                                  isDense: true,
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ),
+                            const Text(
+                              'min',
+                              style: TextStyle(
+                                fontFamily: AppText.family,
+                                fontSize: 13,
+                                height: 18 / 13,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF55625D),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Starts counting when you save',
+                        style: TextStyle(
+                          fontFamily: AppText.family,
+                          fontSize: 12,
+                          height: 16 / 12,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF55625D),
                         ),
                       ),
                     ],
@@ -1946,7 +1972,7 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                       ],
                     ],
                     // Section 6: Manual switch override (Node 17:394)
-                    if (_kind != 'countdown' && _kind != 'oneTime') ...[
+                    if (_kind != 'oneTime') ...[
                       const SizedBox(height: 20),
                       _sectionLabel('If you switch it manually'),
                       const SizedBox(height: 8),
