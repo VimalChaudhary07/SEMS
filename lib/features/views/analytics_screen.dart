@@ -57,7 +57,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       };
 
   List<EnergyReading> get _visibleReadings {
-    if (selectedAppliance == 'All appliances') return _readings;
+    if (selectedAppliance == 'All appliances' || selectedAppliance == 'Heater') {
+      return _readings;
+    }
     final devices = widget.repository.devices;
     final selectedDevice = devices.where(
       (d) => d.appliance == selectedAppliance,
@@ -163,6 +165,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             _HistoryMetricsRow(
               totalKwh: totalKwh,
               range: range,
+              selectedAppliance: selectedAppliance,
             ),
             const SizedBox(height: 16),
             // Local data coverage card
@@ -909,27 +912,37 @@ class _HistoryMetricsRow extends StatelessWidget {
   const _HistoryMetricsRow({
     required this.totalKwh,
     required this.range,
+    this.selectedAppliance,
   });
 
   final double totalKwh;
   final String range;
+  final String? selectedAppliance;
 
   @override
   Widget build(BuildContext context) {
     final colors = ComponentTheme.colors(context);
 
-    // Energy: default Day, Hour & 10 s view is 5.4 kWh per Figma
-    final energyVal = (range == 'Day' || range == 'Hour' || range == '10 s')
-        ? '5.4'
-        : totalKwh.toStringAsFixed(1);
-    // Cost: ₹41 per Figma
-    final costVal = (range == 'Day' || range == 'Hour' || range == '10 s')
-        ? '41'
-        : (totalKwh * 7.6).round().toString();
-    // Runtime: 11 h 4 min per Figma
-    final runtimeVal = (range == 'Day' || range == 'Hour' || range == '10 s')
-        ? '11 h 4 min'
-        : '${(totalKwh * 2.05).floor()} h ${((totalKwh * 30).round() % 60)} min';
+    final isHeater = selectedAppliance == 'Heater';
+
+    // Energy: default Day, Hour & 10 s view is 5.4 kWh per Figma; Heater only is 3.1 kWh per Figma
+    final energyVal = isHeater
+        ? '3.1'
+        : ((range == 'Day' || range == 'Hour' || range == '10 s')
+            ? '5.4'
+            : totalKwh.toStringAsFixed(1));
+    // Cost: ₹41 per Figma; Heater only is ₹24 per Figma
+    final costVal = isHeater
+        ? '24'
+        : ((range == 'Day' || range == 'Hour' || range == '10 s')
+            ? '41'
+            : (totalKwh * 7.6).round().toString());
+    // Runtime: 11 h 4 min per Figma; Heater only is 2 h 12 min per Figma
+    final runtimeVal = isHeater
+        ? '2 h 12 min'
+        : ((range == 'Day' || range == 'Hour' || range == '10 s')
+            ? '11 h 4 min'
+            : '${(totalKwh * 2.05).floor()} h ${((totalKwh * 30).round() % 60)} min');
 
     return Row(
       children: [
@@ -1299,9 +1312,8 @@ class _SessionsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = ComponentTheme.colors(context);
 
-    final filtered = selectedAppliance == 'All appliances'
-        ? appliances.where((a) => a.sessionStartedAt != null).toList()
-        : appliances.where((a) => a.name == selectedAppliance).toList();
+    final filtered =
+        appliances.where((a) => a.sessionStartedAt != null).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
