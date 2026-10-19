@@ -2347,6 +2347,7 @@ class AiInsightDetailsSheet extends StatelessWidget {
 }
 
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 // Screen 121: AI Settings Sheet (Node ID: 21:1105)
 // -----------------------------------------------------------------------------
 class AiSettingsSheet extends StatefulWidget {
@@ -2369,57 +2370,81 @@ class _AiSettingsSheetState extends State<AiSettingsSheet> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Drag handle (40x4 in 10px 0px 4px frame)
           Center(
-            child: Container(
-              width: 38,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD9DEDC),
-                borderRadius: BorderRadius.circular(999),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 4),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE1E9E5),
+                  borderRadius: BorderRadius.circular(999),
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 16),
 
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'AI settings',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F1714),
-                ),
-              ),
-              GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: SvgPicture.asset(
-                  AppAssets.iconClose,
-                  width: 20,
-                  height: 20,
-                  colorFilter: const ColorFilter.mode(
-                    Color(0xFF55625D),
-                    BlendMode.srcIn,
+          // Header (4px 0px 8px padding)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'AI settings',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                    height: 1.33,
                   ),
                 ),
-              ),
-            ],
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    child: SvgPicture.asset(
+                      AppAssets.iconClose,
+                      width: 20,
+                      height: 20,
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFF55625D),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
 
           // Toggles Card
           Container(
             decoration: BoxDecoration(
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFE1E9E5)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color.fromRGBO(16, 22, 20, 0.05),
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
+                BoxShadow(
+                  color: Color.fromRGBO(16, 22, 20, 0.05),
+                  blurRadius: 14,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               children: [
@@ -2428,34 +2453,38 @@ class _AiSettingsSheetState extends State<AiSettingsSheet> {
                   subtitle: 'Notify me about unusual usage',
                   value: anomalyAlerts,
                   onChanged: (v) => setState(() => anomalyAlerts = v),
+                  height: 59,
                 ),
-                const Divider(height: 1, color: Color(0xFFE1E9E5)),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
                 _buildToggleRow(
                   title: 'Wastage detection',
                   subtitle: null,
                   value: wastageDetection,
                   onChanged: (v) => setState(() => wastageDetection = v),
+                  height: 56,
                 ),
-                const Divider(height: 1, color: Color(0xFFE1E9E5)),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
                 _buildToggleRow(
                   title: 'Savings suggestions',
                   subtitle: null,
                   value: savingsSuggestions,
                   onChanged: (v) => setState(() => savingsSuggestions = v),
+                  height: 56,
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
 
-          // Sensitivity
+          // Sensitivity label
           const Text(
             'Sensitivity',
             style: TextStyle(
               fontFamily: 'Inter',
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
               color: Color(0xFF55625D),
+              height: 1.33,
             ),
           ),
           const SizedBox(height: 8),
@@ -2466,12 +2495,14 @@ class _AiSettingsSheetState extends State<AiSettingsSheet> {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: const Color(0xFFEAF1EE),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
                 _buildSegmentButton('Low'),
+                const SizedBox(width: 4),
                 _buildSegmentButton('Balanced'),
+                const SizedBox(width: 4),
                 _buildSegmentButton('High'),
               ],
             ),
@@ -2487,7 +2518,7 @@ class _AiSettingsSheetState extends State<AiSettingsSheet> {
               height: 1.33,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 15),
 
           // Reset learned baselines button
           SizedBox(
@@ -2497,6 +2528,7 @@ class _AiSettingsSheetState extends State<AiSettingsSheet> {
               onPressed: () {},
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFFE1E9E5)),
+                elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -2512,7 +2544,7 @@ class _AiSettingsSheetState extends State<AiSettingsSheet> {
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
           // Save button
           SizedBox(
@@ -2548,22 +2580,26 @@ class _AiSettingsSheetState extends State<AiSettingsSheet> {
     String? subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
+    double? height,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   title,
                   style: const TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF0F1714),
+                    height: 1.33,
                   ),
                 ),
                 if (subtitle != null) ...[
@@ -2575,22 +2611,26 @@ class _AiSettingsSheetState extends State<AiSettingsSheet> {
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                       color: Color(0xFF55625D),
+                      height: 1.5,
                     ),
                   ),
                 ],
               ],
             ),
           ),
-          Switch(
+          const SizedBox(width: 12),
+          _FigmaToggle(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: const Color(0xFF0E9F6E),
-            inactiveTrackColor: const Color(0xFFD9DEDC),
-            activeThumbColor: Colors.white,
           ),
         ],
       ),
     );
+
+    if (height != null) {
+      return SizedBox(height: height, child: content);
+    }
+    return content;
   }
 
   Widget _buildSegmentButton(String option) {
@@ -2599,6 +2639,7 @@ class _AiSettingsSheetState extends State<AiSettingsSheet> {
       child: GestureDetector(
         onTap: () => setState(() => sensitivity = option),
         child: Container(
+          height: 36,
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
@@ -2606,8 +2647,13 @@ class _AiSettingsSheetState extends State<AiSettingsSheet> {
                 ? const [
                     BoxShadow(
                       color: Color.fromRGBO(16, 22, 20, 0.05),
-                      blurRadius: 4,
+                      blurRadius: 2,
                       offset: Offset(0, 1),
+                    ),
+                    BoxShadow(
+                      color: Color.fromRGBO(16, 22, 20, 0.05),
+                      blurRadius: 14,
+                      offset: Offset(0, 4),
                     ),
                   ]
                 : null,
@@ -2618,9 +2664,49 @@ class _AiSettingsSheetState extends State<AiSettingsSheet> {
             style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 13,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: const Color(0xFF0F1714),
+              fontWeight: FontWeight.w500,
+              color: isSelected ? const Color(0xFF0F1714) : const Color(0xFF55625D),
+              height: 1.38,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FigmaToggle extends StatelessWidget {
+  const _FigmaToggle({required this.value, required this.onChanged});
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        width: 46,
+        height: 28,
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: value ? const Color(0xFF0E9F6E) : const Color(0xFFD9DEDC),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: const [
+              BoxShadow(
+                color: Color.fromRGBO(16, 22, 20, 0.15),
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+            ],
           ),
         ),
       ),
