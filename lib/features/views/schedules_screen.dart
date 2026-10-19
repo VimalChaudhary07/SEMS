@@ -1088,6 +1088,7 @@ class ScheduleEditorScreen extends StatefulWidget {
     this.initialDays,
     this.initialDate,
     this.initialClockSynced,
+    this.showDeleteDialogOnStart = false,
   });
 
   final SemsRepository repository;
@@ -1101,6 +1102,7 @@ class ScheduleEditorScreen extends StatefulWidget {
   final List<String>? initialDays;
   final DateTime? initialDate;
   final bool? initialClockSynced;
+  final bool showDeleteDialogOnStart;
 
   @override
   State<ScheduleEditorScreen> createState() => _ScheduleEditorScreenState();
@@ -1204,6 +1206,13 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
     _clockSynced = widget.initialClockSynced ?? true;
     if (widget.initialClockSynced == null) {
       _refreshClockSync();
+    }
+    if (widget.showDeleteDialogOnStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _confirmDelete();
+        }
+      });
     }
   }
 
@@ -2356,19 +2365,97 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
     if (existing == null) return;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete schedule?'),
-        content: Text('“${existing.name}” will be removed from this device.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      barrierColor: const Color.fromRGBO(0, 0, 0, 0.55),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Delete schedule?',
+                style: TextStyle(
+                  fontFamily: AppText.family,
+                  fontSize: 18,
+                  height: 24 / 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F1714),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'The schedule is removed from the socket. Past results are not affected.',
+                style: TextStyle(
+                  fontFamily: AppText.family,
+                  fontSize: 14,
+                  height: 20 / 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF55625D),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context, false),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEAF1EE),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontFamily: AppText.family,
+                            fontSize: 15,
+                            height: 20 / 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0F1714),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context, true),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD64545),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(
+                            fontFamily: AppText.family,
+                            fontSize: 15,
+                            height: 20 / 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
+        ),
       ),
     );
     if (confirmed == true && mounted) {
