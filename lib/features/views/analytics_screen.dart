@@ -78,19 +78,26 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final colors = ComponentTheme.colors(context);
 
     if (widget.repository.devices.isEmpty) {
-      return SafeArea(
-        child: Column(
-          children: [
-            _buildTopBar(colors, canExport: false),
-            const Expanded(
-              child: EmptyState(
-                title: 'No history yet',
-                message:
-                    'Usage appears here after your first socket starts reporting.',
-                icon: Icons.bar_chart_rounded,
-              ),
+      return Scaffold(
+        backgroundColor: colors.background,
+        bottomNavigationBar: widget.bottomNavigationBar,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                _buildTopBar(colors, canExport: true),
+                const Expanded(
+                  child: EmptyState(
+                    title: 'No history yet',
+                    message:
+                        'Usage appears here after your first socket starts reporting.',
+                    icon: Icons.bar_chart_rounded,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }
