@@ -270,7 +270,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
     );
 
     if (_status == BackupScreenStatus.googleAccountChooser ||
-        _status == BackupScreenStatus.manualBackupSheet) {
+        _status == BackupScreenStatus.manualBackupSheet ||
+        _status == BackupScreenStatus.verifyResultSheet) {
       return Scaffold(
         backgroundColor: const Color(0xFFF4F7F6),
         bottomNavigationBar: widget.bottomNavigationBar,
@@ -297,7 +298,9 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
               bottom: 0,
               child: _status == BackupScreenStatus.googleAccountChooser
                   ? _buildGoogleAccountChooserSheet()
-                  : _buildManualBackupSheet(),
+                  : _status == BackupScreenStatus.manualBackupSheet
+                      ? _buildManualBackupSheet()
+                      : _buildVerifyResultSheet(),
             ),
           ],
         ),
@@ -325,6 +328,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
       case BackupScreenStatus.familyOwnerOnly:
         return _buildFamilyOwnerOnlyContent();
       case BackupScreenStatus.manualBackupSheet:
+      case BackupScreenStatus.verifyResultSheet:
       case BackupScreenStatus.connected:
       default:
         return _buildConnectedContent();
@@ -823,6 +827,301 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildVerifyResultSheet() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Grab handle (18px)
+          Padding(
+            padding: const EdgeInsets.only(top: 10, bottom: 4),
+            child: Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE1E9E5),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+          ),
+
+          // Header row (52px)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: SizedBox(
+              height: 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Backup verified',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F1714),
+                      height: 24 / 18,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _status = BackupScreenStatus.connected;
+                      });
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      child: SvgPicture.asset(
+                        AppAssets.iconClose,
+                        width: 20,
+                        height: 20,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF0F1714),
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Verification content & group card
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Checkmark container (88px)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE2F1E8),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: SvgPicture.asset(
+                        AppAssets.iconCheck,
+                        width: 26,
+                        height: 26,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF2E9E5B),
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'All checksums match',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F1714),
+                        height: 20 / 15,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Group card (171px)
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE1E9E5)),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color.fromRGBO(16, 22, 20, 0.05),
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    ),
+                    BoxShadow(
+                      color: Color.fromRGBO(16, 22, 20, 0.05),
+                      blurRadius: 14,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Row 1: Batches checked
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 18,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text(
+                            'Batches checked',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF0F1714),
+                              height: 20 / 15,
+                            ),
+                          ),
+                          Text(
+                            '128',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF0F1714),
+                              height: 18 / 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(height: 1, color: const Color(0xFFE1E9E5)),
+                    // Row 2: Gaps found
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Gaps found',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF0F1714),
+                              height: 20 / 15,
+                            ),
+                          ),
+                          Container(
+                            height: 24,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFCF0D9),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SvgPicture.asset(
+                                  AppAssets.iconAlert,
+                                  width: 13,
+                                  height: 13,
+                                  colorFilter: const ColorFilter.mode(
+                                    Color(0xFFD98A00),
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  '1 gap',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFFD98A00),
+                                    height: 16 / 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(height: 1, color: const Color(0xFFE1E9E5)),
+                    // Row 3: Schema
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 18,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text(
+                            'Schema',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF0F1714),
+                              height: 20 / 15,
+                            ),
+                          ),
+                          Text(
+                            'v1',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF0F1714),
+                              height: 18 / 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Button "Done" (48px)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _status = BackupScreenStatus.connected;
+                  });
+                },
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0E9F6E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'Done',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
