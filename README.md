@@ -226,53 +226,55 @@ SEMS leverages the **AWS IoT Device Shadow** to reconcile state differences betw
 ```mermaid
 flowchart TB
     subgraph Edge["Hardware Edge Layer"]
-        ESP32["Smart Socket (ESP32-S3)<br/>ATECC608A Secure Element<br/>CS5463 Metering IC"]
+        ESP32["Smart Socket ESP32-S3<br/>ATECC608A Secure Element<br/>CS5463 Metering IC"]
     end
 
     subgraph IoTCore["AWS IoT Core"]
-        Broker["Message Broker<br/>(MQTT over TLS 1.3 mTLS)"]
-        Shadow["Device Shadow Service<br/>(Desired vs Reported)"]
-        Rules["IoT Rules Engine<br/>(SQL Message Routing)"]
+        Broker["Message Broker<br/>MQTT over TLS 1.3 mTLS"]
+        Shadow["Device Shadow Service<br/>Desired vs Reported"]
+        Rules["IoT Rules Engine<br/>SQL Message Routing"]
     end
 
-    subgraph Ingestion["Streaming & Events"]
+    subgraph Ingestion["Streaming and Events"]
         Kinesis["Amazon Kinesis Data Streams"]
         EventBridge["Amazon EventBridge"]
     end
 
-    subgraph Compute["Serverless Processing (AWS Lambda)"]
+    subgraph Compute["Serverless Processing AWS Lambda"]
         L_Telem["Telemetry Ingestion Lambda"]
         L_Cmd["Relay Command Controller"]
-        L_Alert["Alert & Safety Engine"]
-        L_Bill["Billing & Tariff Lambda"]
+        L_Alert["Alert and Safety Engine"]
+        L_Bill["Billing and Tariff Lambda"]
         L_AI["AI Inference Lambda"]
     end
 
     subgraph Data["Storage Layer"]
-        Timestream[("Amazon Timestream<br/>(High-Res Telemetry)")]
-        DynamoDB[("Amazon DynamoDB<br/>(Operational Single-Table)")]
-        S3[("Amazon S3 & Glacier<br/>(Cold Lake & Backups)")]
+        Timestream[("Amazon Timestream - High-Res Telemetry")]
+        DynamoDB[("Amazon DynamoDB - Operational Store")]
+        S3[("Amazon S3 and Glacier - Cold Storage")]
     end
 
     subgraph ML["Intelligence Layer"]
-        SageMaker["AWS SageMaker / Bedrock<br/>(Forecasting & Insights)"]
+        SageMaker["AWS SageMaker and Bedrock<br/>Forecasting and Insights"]
     end
 
-    subgraph Gateway["API & Notification Gateway"]
+    subgraph Gateway["API and Notification Gateway"]
         Cognito["Amazon Cognito User Pool"]
-        APIGW["API Gateway (REST & WebSocket)"]
-        SNS["Amazon SNS / FCM Push"]
+        APIGW["API Gateway - REST and WebSocket"]
+        SNS["Amazon SNS and FCM Push"]
     end
 
     subgraph Client["Flutter Mobile Client"]
-        App["SEMS Flutter App<br/>(Riverpod + Drift SQLite)"]
+        App["SEMS Flutter App<br/>Riverpod and Drift SQLite"]
     end
 
-    ESP32 <-->|mTLS MQTT| Broker
-    Broker <--> Shadow
+    ESP32 -->|mTLS MQTT| Broker
+    Broker --> ESP32
+    Broker --> Shadow
+    Shadow --> Broker
     Broker --> Rules
     Rules -->|Raw Metrics| Kinesis
-    Rules -->|Trips & Alerts| EventBridge
+    Rules -->|Trips and Alerts| EventBridge
     Shadow -->|State Change| EventBridge
 
     Kinesis --> L_Telem
@@ -291,9 +293,10 @@ flowchart TB
     SageMaker --> L_AI
     L_AI --> DynamoDB
 
-    App <-->|OAuth2 / JWT| Cognito
-    App <-->|REST HTTPS| APIGW
-    App <-->|Live Stream WSS| APIGW
+    App -->|Cognito Auth| Cognito
+    Cognito --> App
+    App -->|REST API HTTPS| APIGW
+    App -->|Live Stream WSS| APIGW
     APIGW --> L_Cmd
     L_Cmd --> Shadow
     SNS -->|Push Alert| App
@@ -312,20 +315,20 @@ sequenceDiagram
     participant APIGW as API Gateway (Lambda Authorizer)
     participant Dynamo as DynamoDB
 
-    User->>App: Enter Credentials (Email & Password)
+    User->>App: Enter Credentials (Email and Password)
     App->>Cognito: Authenticate (InitiateAuth)
-    Cognito-->>App: Issue ID Token, Access Token & Refresh Token<br/>(Claims: custom:home_id, custom:role)
+    Cognito-->>App: Issue ID Token, Access Token and Refresh Token<br/>Claims: custom:home_id, custom:role
     App->>App: Store Tokens in FlutterSecureStorage
-    App->>App: Evaluate Local Role & Configure PermissionGate
+    App->>App: Evaluate Local Role and Configure PermissionGate
 
-    User->>App: Perform Action (e.g., Modify Tariff Slabs)
+    User->>App: Perform Action (e.g. Modify Tariff Slabs)
     App->>APIGW: HTTP PUT /api/v1/billing/tariff (Bearer ID Token)
-    APIGW->>APIGW: Lambda Authorizer Verifies JWT & Checks Claims
-    alt Role == OWNER
+    APIGW->>APIGW: Lambda Authorizer Verifies JWT and Checks Claims
+    alt Role is OWNER
         APIGW->>Dynamo: Write Updated Tariff Slabs
         Dynamo-->>APIGW: Success
         APIGW-->>App: 200 OK (Tariff Updated)
-    else Role == FAMILY
+    else Role is FAMILY
         APIGW-->>App: 403 Forbidden (ErrPermissionDenied)
         App->>User: Display Read-Only / Access Denied Sheet
     end
@@ -345,24 +348,24 @@ sequenceDiagram
     participant Lambda as Provisioning Lambda
     participant Dynamo as DynamoDB (Identities)
 
-    User->>App: Scan Socket QR Code (Device ID + Claim Code)
+    User->>App: Scan Socket QR Code (Device ID and Claim Code)
     App->>Socket: Connect over Bluetooth Low Energy (BLE)
-    App->>Socket: Write Wi-Fi Credentials (SSID + Password)
+    App->>Socket: Write Wi-Fi Credentials (SSID and Password)
     Socket->>Socket: Connect to Local Wi-Fi Network
 
     Note over Socket, IoTCore: AWS IoT Fleet Provisioning by Claim
     Socket->>IoTCore: Connect via MQTT with Bootstrap Claim Certificate
-    Socket->>IoTCore: Publish $aws/certificates/create/json
-    IoTCore-->>Socket: Return Production Certificate & Ownership Token
-    Socket->>IoTCore: Publish $aws/provisioning-templates/SEMS/provision/json
+    Socket->>IoTCore: Publish create certificate request
+    IoTCore-->>Socket: Return Production Certificate and Ownership Token
+    Socket->>IoTCore: Publish provision request with template
     IoTCore->>Lambda: Trigger Pre-Provisioning Hook (Validate Claim)
     Lambda->>Dynamo: Validate Claim Code against Device Registry
-    Dynamo-->>Lambda: Valid & Unclaimed
-    Lambda-->>IoTCore: Approve Provisioning & Assign Policy
+    Dynamo-->>Lambda: Valid and Unclaimed
+    Lambda-->>IoTCore: Approve Provisioning and Assign Policy
     IoTCore-->>Socket: Return Provisioning Acknowledged
     Socket->>Socket: Store Production X.509 Certificate in ATECC608A
     Socket->>IoTCore: Reconnect using Production Certificate
-    App->>Dynamo: Bind Socket to User's Home ID & Assign Room
+    App->>Dynamo: Bind Socket to User Home ID and Assign Room
 ```
 
 ---
@@ -371,12 +374,12 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    Socket["Smart Socket<br/>(10s Cadence)"] -->|MQTT Publish| IoTCore["AWS IoT Core Rules Engine"]
+    Socket["Smart Socket - 10s Cadence"] -->|MQTT Publish| IoTCore["AWS IoT Core Rules Engine"]
     IoTCore -->|Batch SQL Filter| Kinesis["Amazon Kinesis Data Streams"]
     Kinesis -->|Consumer Batch| Lambda["Telemetry Processor Lambda"]
-    Lambda -->|Raw 10s Metric Samples| Timestream[("Amazon Timestream<br/>(24h Memory / 90d Magnetic)")]
-    Lambda -->|Update Current State| DynamoDB[("Amazon DynamoDB<br/>(Live Wattage & Meter)")]
-    Lambda -->|Archive Batches (Parquet)| Firehose["Kinesis Firehose"]
+    Lambda -->|Raw 10s Metric Samples| Timestream[("Amazon Timestream - 24h Memory and 90d Magnetic")]
+    Lambda -->|Update Current State| DynamoDB[("Amazon DynamoDB - Live Wattage and Meter")]
+    Lambda -->|Archive Parquet Batches| Firehose["Kinesis Firehose"]
     Firehose --> S3[("Amazon S3 Cold Lake")]
 ```
 
@@ -395,17 +398,17 @@ sequenceDiagram
     participant Socket as Smart Socket Relay
 
     User->>App: Tap Power Button (Toggle OFF)
-    App->>APIGW: Send Command: {deviceId: "SEMS-000001", target: false}
+    App->>APIGW: Send Command: Device SEMS-000001 to OFF
     APIGW->>Lambda: Forward Request
-    Lambda->>Shadow: Update Desired: {state: {desired: {relay: false}}}
+    Lambda->>Shadow: Update Desired: relay = false
     Lambda-->>App: Emit PENDING (Button turns blue, displays spinner)
 
-    Shadow->>Socket: Publish /update/delta: {relay: false}
-    Socket->>Shadow: Publish /update: {state: {reported: {relay: true, ack: true}}}
-    Shadow-->>App: Push ACKNOWLEDGED ("Hardware processing command...")
+    Shadow->>Socket: Publish delta: relay = false
+    Socket->>Shadow: Publish update: reported relay = true, ack = true
+    Shadow-->>App: Push ACKNOWLEDGED (Hardware processing command...)
 
     Socket->>Socket: Actuate 16A Zero-Crossing Relay
-    Socket->>Shadow: Publish /update: {state: {reported: {relay: false, ack: false}}}
+    Socket->>Shadow: Publish update: reported relay = false, ack = false
     Shadow-->>App: Push EXECUTED (Desired == Reported)
     App->>User: Button snaps to OFF state
 ```
@@ -416,17 +419,17 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Start["User selects 'Move Appliance' in App"] --> ReadA["Read Current Socket A Meter (e.g. 150.00 kWh)"]
-    ReadA --> CloseSess["Close Session: 150.00 kWh - 145.80 kWh = 4.20 kWh"]
-    CloseSess --> SaveA["Persist Session Record to DynamoDB APP#{id}/SESS#{id}"]
-    SaveA --> DetachA["Detach Appliance from Socket A (Set socketId = NULL)"]
-    DetachA --> CheckB{"Is Socket B Occupied?"}
-    CheckB -->|Yes| CloseB["Close Existing Occupant's Session & Detach from Socket B"]
+    Start["User selects Move Appliance in App"] --> ReadA["Read Current Socket A Meter - e.g. 150.00 kWh"]
+    ReadA --> CloseSess["Close Session: 150.00 minus 145.80 = 4.20 kWh"]
+    CloseSess --> SaveA["Persist Session Record to DynamoDB APP-id / SESS-id"]
+    SaveA --> DetachA["Detach Appliance from Socket A"]
+    DetachA --> CheckB{"Is Socket B Occupied"}
+    CheckB -->|Yes| CloseB["Close Existing Occupant Session and Detach"]
     CheckB -->|No| AttachB["Attach Appliance to Socket B"]
     CloseB --> AttachB
-    AttachB --> ReadB["Read Socket B Initial Meter (e.g. 84.10 kWh)"]
-    ReadB --> StartSess["Open New Session with startMeter = 84.10 kWh"]
-    StartSess --> SyncCloud["Update Device Shadow & Refresh App Dashboard"]
+    AttachB --> ReadB["Read Socket B Initial Meter - e.g. 84.10 kWh"]
+    ReadB --> StartSess["Open New Session with startMeter 84.10 kWh"]
+    StartSess --> SyncCloud["Update Device Shadow and Refresh App Dashboard"]
 ```
 
 ---
@@ -436,17 +439,17 @@ flowchart TD
 ```mermaid
 flowchart LR
     subgraph Cloud["AWS Cloud Management"]
-        App["Flutter App<br/>(Schedule Editor)"] -->|PUT Schedule| APIGW["API Gateway"]
+        App["Flutter App - Schedule Editor"] -->|PUT Schedule| APIGW["API Gateway"]
         APIGW --> SchedLambda["Schedule Lambda"]
         SchedLambda --> DynamoDB[("DynamoDB")]
-        SchedLambda --> EventBridge["EventBridge Scheduler<br/>(Cloud Backup)"]
-        SchedLambda --> Shadow["AWS IoT Device Shadow<br/>(Desired Schedules)"]
+        SchedLambda --> EventBridge["EventBridge Scheduler - Cloud Backup"]
+        SchedLambda --> Shadow["AWS IoT Device Shadow - Desired Schedules"]
     end
 
     subgraph Edge["Smart Socket Edge Execution"]
-        Shadow -->|Sync Delta| Socket["ESP32 Flash Storage<br/>(Local Schedule Cache)"]
-        NTP["AWS Time Sync Service<br/>(SNTP UDP 123)"] -.->|Sync RTC| Socket
-        Socket --> LocalRTC["Hardware RTC & Alarm"]
+        Shadow -->|Sync Delta| Socket["ESP32 Flash Storage - Local Schedule Cache"]
+        NTP["AWS Time Sync Service - SNTP UDP 123"] -->|Sync RTC| Socket
+        Socket --> LocalRTC["Hardware RTC and Alarm"]
         LocalRTC --> Relay["Actuate Zero-Crossing Relay"]
     end
 ```
@@ -457,23 +460,23 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    Cron["Daily Midnight Cron (EventBridge)"] --> Lambda["Billing Calculation Lambda"]
-    Lambda --> Timestream[("Timestream<br/>(Query Month-to-Date kWh)")]
-    Lambda --> DynamoDB[("DynamoDB<br/>(Fetch Tariff Slabs & Fixed Charges)")]
+    Cron["Daily Midnight Cron - EventBridge"] --> Lambda["Billing Calculation Lambda"]
+    Lambda --> Timestream[("Timestream - Query Month-to-Date kWh")]
+    Lambda --> DynamoDB[("DynamoDB - Fetch Tariff Slabs and Fixed Charges")]
 
     subgraph Calculation["Progressive Tariff Slab Algorithm"]
-        DynamoDB --> Slab1["Slab 1: 0 - 100 kWh @ ₹6.00/kWh"]
-        Slab1 --> Slab2["Slab 2: 101 - 200 kWh @ ₹8.00/kWh"]
-        Slab2 --> Slab3["Slab 3: > 200 kWh @ ₹9.50/kWh"]
+        DynamoDB --> Slab1["Slab 1: 0 to 100 kWh @ ₹6.00/kWh"]
+        Slab1 --> Slab2["Slab 2: 101 to 200 kWh @ ₹8.00/kWh"]
+        Slab2 --> Slab3["Slab 3: Above 200 kWh @ ₹9.50/kWh"]
         Slab3 --> SumSlabs["Sum Energy Charges"]
-        SumSlabs --> AddFixed["Add Fixed Charge (₹120)"]
-        AddFixed --> AddDuty["Add State Electricity Duty (2.0%)"]
+        SumSlabs --> AddFixed["Add Fixed Charge: ₹120"]
+        AddFixed --> AddDuty["Add State Electricity Duty: 2.0%"]
         AddDuty --> Total["Estimated Bill Amount"]
     end
 
-    Total --> Budget{"Exceeds Monthly Budget?"}
-    Budget -->|Yes| Alert["Dispatch Budget Alert via SNS"]
-    Budget -->|No| Store["Save Accrued Bill to DynamoDB"]
+    Total --> Budget{"Check Monthly Budget Limit"}
+    Budget -->|Exceeded| Alert["Dispatch Budget Alert via SNS"]
+    Budget -->|Within Budget| Store["Save Accrued Bill to DynamoDB"]
     Store --> Push["Broadcast Update via WebSocket to Flutter"]
 ```
 
@@ -488,12 +491,12 @@ flowchart LR
         Firehose --> S3[("S3 Parquet Lake")]
     end
 
-    subgraph ML_Pipeline["Machine Learning & Inference"]
-        S3 --> SageMaker["Amazon SageMaker Pipelines<br/>(Trained on Historical Loads)"]
-        SageMaker --> Anomaly["Z-Score Anomaly Detector<br/>(3 - 6 Days Data)"]
-        SageMaker --> Forecast["Prophet / XGBoost Forecaster<br/>(7 - 29 Days Data)"]
-        SageMaker --> Monthly["DeepAR Long-Range Forecaster<br/>(30 - 59 Days Data)"]
-        SageMaker --> Bedrock["Amazon Bedrock (Claude 3.5)<br/>(60+ Days Contextual Insights)"]
+    subgraph ML_Pipeline["Machine Learning and Inference"]
+        S3 --> SageMaker["Amazon SageMaker Pipelines - Trained on Historical Loads"]
+        SageMaker --> Anomaly["Z-Score Anomaly Detector - 3 to 6 Days Data"]
+        SageMaker --> Forecast["Prophet or XGBoost Forecaster - 7 to 29 Days Data"]
+        SageMaker --> Monthly["DeepAR Long-Range Forecaster - 30 to 59 Days Data"]
+        SageMaker --> Bedrock["Amazon Bedrock Claude 3.5 - 60+ Days Contextual Insights"]
     end
 
     subgraph AppSync["Presentation in Flutter"]
@@ -519,9 +522,9 @@ sequenceDiagram
     participant SNS as Amazon SNS
     participant App as Flutter Mobile App
 
-    HW->>HW: Detect Over-Current Condition (18.4A > 16.0A Limit)
-    HW->>HW: Hardware Relay Cutoff (<10ms) & Lock Relay
-    HW->>IoTCore: MQTT Publish: sems/devices/{id}/safety-trip
+    HW->>HW: Detect Over-Current Condition (18.4A over 16.0A Limit)
+    HW->>HW: Hardware Relay Cutoff in under 10ms and Lock Relay
+    HW->>IoTCore: MQTT Publish: sems/devices/id/safety-trip
     IoTCore->>EventBridge: Route Safety Event
     EventBridge->>AlertLambda: Invoke Alert Processor
     AlertLambda->>Dynamo: Persist Critical Alert Entity
@@ -537,21 +540,21 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    User["User triggers 'Backup Now' in Settings"] --> App["Flutter Backup Engine"]
+    User["User triggers Backup Now in Settings"] --> App["Flutter Backup Engine"]
     App --> ExportDrift["Export Local Drift SQLite Collections to Encrypted JSON"]
     ExportDrift --> Hash["Calculate SHA-256 Checksum"]
     Hash --> Upload["HTTP PUT Presigned S3 URL"]
-    Upload --> S3[("Amazon S3 Bucket (sems-backups)")]
+    Upload --> S3[("Amazon S3 Bucket - sems-backups")]
     S3 --> RecordManifest["Persist Backup Manifest in DynamoDB"]
-    RecordManifest --> Complete["Backup Marked 'Completed' in App"]
+    RecordManifest --> Complete["Backup Marked Completed in App"]
 
-    subgraph RestoreFlow["Disaster Recovery / Device Restore"]
+    subgraph RestoreFlow["Disaster Recovery and Device Restore"]
         SelectBackup["Select Backup from Cloud Catalog"] --> FetchS3["Download Archive from S3"]
         FetchS3 --> VerifyHash{"Verify SHA-256 Checksum"}
         VerifyHash -->|Checksum Mismatch| Fail["Abort with Checksum Error"]
-        VerifyHash -->|Valid| Strategy{"Choose Strategy"}
+        VerifyHash -->|Valid Checksum| Strategy{"Restore Mode Selection"}
         Strategy -->|Merge| Merge["Merge New Records with Existing Data"]
-        Strategy -->|Import As New| Overwrite["Clean Reset & Restore Baseline"]
+        Strategy -->|Import As New| Overwrite["Clean Reset and Restore Baseline"]
         Merge --> Finish["App Rehydrated from Snapshot"]
         Overwrite --> Finish
     end

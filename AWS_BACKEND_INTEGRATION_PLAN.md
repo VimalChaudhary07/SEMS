@@ -26,70 +26,68 @@ The SEMS cloud ecosystem employs an event-driven, serverless, microservices arch
 
 ```mermaid
 flowchart TB
-    subgraph Edge["Edge Layer (Physical Sockets)"]
-        ESP32["Smart Socket (ESP32-S3)<br/>ATECC608A Secure Element<br/>FreeRTOS + AWS IoT SDK"]
+    subgraph Edge["Edge Layer Physical Sockets"]
+        ESP32["Smart Socket ESP32-S3<br/>ATECC608A Secure Element<br/>FreeRTOS and AWS IoT SDK"]
     end
 
     subgraph IoTCore["AWS IoT Core Layer"]
-        Broker["Message Broker<br/>(MQTT over TLS 1.3 / mTLS)"]
-        Shadow["Device Shadow Service<br/>(Desired vs Reported)"]
-        Rules["IoT Rules Engine<br/>(Topic Routing & Filtering)"]
-        Defender["AWS IoT Device Defender<br/>(Security & Anomaly Audit)"]
+        Broker["Message Broker<br/>MQTT over TLS 1.3 mTLS"]
+        Shadow["Device Shadow Service<br/>Desired vs Reported"]
+        Rules["IoT Rules Engine<br/>Topic Routing and Filtering"]
+        Defender["AWS IoT Device Defender<br/>Security and Anomaly Audit"]
     end
 
-    subgraph Ingestion["Streaming & Event Ingestion Pipeline"]
-        Kinesis["Amazon Kinesis Data Streams<br/>(Telemetry Ingestion Buffer)"]
-        EventBridge["Amazon EventBridge<br/>(System Event Bus & Scheduler)"]
+    subgraph Ingestion["Streaming and Event Ingestion Pipeline"]
+        Kinesis["Amazon Kinesis Data Streams<br/>Telemetry Ingestion Buffer"]
+        EventBridge["Amazon EventBridge<br/>System Event Bus and Scheduler"]
     end
 
-    subgraph Processing["Serverless Compute Layer (AWS Lambda)"]
-        L_Telemetry["Telemetry Processor Lambda<br/>(Batch Ingestion & Downsampling)"]
-        L_Shadow["Shadow Sync Lambda<br/>(State Reconciliation)"]
-        L_Alerts["Alert Engine Lambda<br/>(Thresholds & Safety Trip)"]
-        L_Billing["Billing & Tariff Lambda<br/>(Daily Slabs & Accruals)"]
-        L_Sched["Scheduler Engine Lambda<br/>(Cron & Overrides)"]
-        L_API["REST / WebSocket Handlers"]
+    subgraph Processing["Serverless Compute Layer AWS Lambda"]
+        L_Telemetry["Telemetry Processor Lambda<br/>Batch Ingestion and Downsampling"]
+        L_Shadow["Shadow Sync Lambda<br/>State Reconciliation"]
+        L_Alerts["Alert Engine Lambda<br/>Thresholds and Safety Trip"]
+        L_Billing["Billing and Tariff Lambda<br/>Daily Slabs and Accruals"]
+        L_Sched["Scheduler Engine Lambda<br/>Cron and Overrides"]
+        L_API["REST and WebSocket Handlers"]
     end
 
     subgraph Storage["Tiered Data Storage"]
-        Timestream[("Amazon Timestream<br/>(10s / 1m Raw Telemetry)")]
-        DynamoDB[("Amazon DynamoDB<br/>(Single-Table Store: Entities, State)")]
-        S3_Lake[("Amazon S3 & Glacier<br/>(Parquet Cold Lake & Backups)")]
+        Timestream[("Amazon Timestream - High-Res Telemetry")]
+        DynamoDB[("Amazon DynamoDB - Single-Table Store")]
+        S3_Lake[("Amazon S3 and Glacier - Cold Lake and Backups")]
     end
 
-    subgraph AI_Engine["AI & Machine Learning"]
-        SageMaker["AWS SageMaker / Bedrock<br/>(Forecasting, Anomaly, Baselines)"]
+    subgraph AI_Engine["AI and Machine Learning"]
+        SageMaker["AWS SageMaker and Bedrock<br/>Forecasting, Anomaly, Baselines"]
     end
 
-    subgraph AppGateway["Client Gateway & Auth"]
-        Cognito["Amazon Cognito<br/>(User Pool & RBAC)"]
-        APIGW["Amazon API Gateway<br/>(REST & WebSocket)"]
-        SNS["Amazon SNS & FCM<br/>(Push Notifications)"]
+    subgraph AppGateway["Client Gateway and Auth"]
+        Cognito["Amazon Cognito<br/>User Pool and RBAC"]
+        APIGW["Amazon API Gateway<br/>REST and WebSocket"]
+        SNS["Amazon SNS and FCM<br/>Push Notifications"]
     end
 
     subgraph Client["Mobile Application Layer"]
-        Flutter["Flutter Client (Android/iOS)<br/>Riverpod + Drift + AWS Amplify"]
+        Flutter["Flutter Client Android and iOS<br/>Riverpod, Drift and AWS Amplify"]
     end
 
-    %% Edge Connections
-    ESP32 <-->|mTLS X.509 MQTT| Broker
-    Broker <--> Shadow
+    ESP32 -->|mTLS MQTT| Broker
+    Broker --> ESP32
+    Broker --> Shadow
+    Shadow --> Broker
     Broker --> Rules
-    Defender -.-> Broker
+    Defender --> Broker
 
-    %% Rules Routing
     Rules -->|Raw Telemetry| Kinesis
-    Rules -->|Alerts / Trips| EventBridge
+    Rules -->|Alerts and Trips| EventBridge
     Shadow -->|State Change Delta| EventBridge
 
-    %% Ingestion to Compute
     Kinesis --> L_Telemetry
     EventBridge --> L_Shadow
     EventBridge --> L_Alerts
     EventBridge --> L_Billing
     EventBridge --> L_Sched
 
-    %% Compute to Storage & AI
     L_Telemetry --> Timestream
     L_Telemetry --> DynamoDB
     L_Telemetry --> S3_Lake
@@ -100,10 +98,10 @@ flowchart TB
     Timestream --> SageMaker
     SageMaker --> DynamoDB
 
-    %% Client API Path
-    Flutter <-->|OAuth2 / JWT| Cognito
-    Flutter <-->|REST API HTTPS| APIGW
-    Flutter <-->|Live Stream WSS| APIGW
+    Flutter -->|Cognito Auth| Cognito
+    Cognito --> Flutter
+    Flutter -->|REST API HTTPS| APIGW
+    Flutter -->|Live Stream WSS| APIGW
     APIGW --> L_API
     L_API --> DynamoDB
     L_API --> Timestream
@@ -231,23 +229,23 @@ User authentication leverages **Amazon Cognito User Pools** with OAuth 2.0 / Ope
 ```mermaid
 flowchart LR
     subgraph Client["Flutter Client"]
-        AuthAction["User Signs In<br/>(Email + Password)"]
-        TokenStore["Flutter Secure Storage<br/>(ID Token, Access Token, Refresh Token)"]
+        AuthAction["User Signs In<br/>Email and Password"]
+        TokenStore["Flutter Secure Storage<br/>ID Token, Access Token, Refresh Token"]
     end
 
     subgraph Cognito["Amazon Cognito"]
-        UserPool["Cognito User Pool<br/>(Custom Claims: home_id, role)"]
+        UserPool["Cognito User Pool<br/>Custom Claims: home_id, role"]
         IdPool["Cognito Identity Pool"]
     end
 
-    subgraph API_Security["API Gateway & Lambda Authorizer"]
-        JWT_Verify["JWT Token Verification & Policy Evaluation"]
-        Gate["PermissionGate Enforcement<br/>(Owner vs Family)"]
+    subgraph API_Security["API Gateway and Lambda Authorizer"]
+        JWT_Verify["JWT Token Verification and Policy Evaluation"]
+        Gate["PermissionGate Enforcement<br/>Owner vs Family"]
     end
 
     AuthAction -->|Authenticate| UserPool
     UserPool -->|Issue JWT Tokens| TokenStore
-    TokenStore -->|Bearer Token HTTP / WSS| JWT_Verify
+    TokenStore -->|Bearer Token HTTP and WSS| JWT_Verify
     JWT_Verify --> Gate
 ```
 
@@ -393,15 +391,15 @@ When moving an appliance from Socket A to Socket B:
 
 ```mermaid
 flowchart TD
-    Start["Initiate Move Wizard in App"] --> InspectA["Query Socket A Meter (e.g. 150.00 kWh)"]
-    InspectA --> Calc["Close Session: 150.00 - 145.80 = 4.20 kWh"]
+    Start["Initiate Move Wizard in App"] --> InspectA["Query Socket A Meter - e.g. 150.00 kWh"]
+    InspectA --> Calc["Close Session: 150.00 minus 145.80 = 4.20 kWh"]
     Calc --> SaveHist["Persist Session to DynamoDB"]
-    SaveHist --> InspectB{"Is Socket B Occupied?"}
-    InspectB -->|Yes| EvictB["Close Occupant B Session & Detach"]
+    SaveHist --> InspectB{"Is Socket B Occupied"}
+    InspectB -->|Yes| EvictB["Close Occupant B Session and Detach"]
     InspectB -->|No| Attach["Attach Moved Appliance to Socket B"]
     EvictB --> Attach
-    Attach --> StartSess["Read Socket B Current Meter & Open New Session"]
-    StartSess --> Done["Update Device Shadow & Sync App UI"]
+    Attach --> StartSess["Read Socket B Current Meter and Open New Session"]
+    StartSess --> Done["Update Device Shadow and Sync App UI"]
 ```
 
 ---
@@ -412,17 +410,17 @@ Smart sockets must execute schedules reliably even during internet outages.
 ```mermaid
 flowchart LR
     subgraph Cloud["AWS Cloud Management"]
-        AppUI["User Configures Schedule<br/>(Days, Intervals, Overnight)"] --> APIGW["API Gateway"]
+        AppUI["User Configures Schedule<br/>Days, Intervals, Overnight"] --> APIGW["API Gateway"]
         APIGW --> SchedLambda["Schedule Manager Lambda"]
         SchedLambda --> DynamoDB[("DynamoDB")]
-        SchedLambda --> EventBridge["Amazon EventBridge<br/>Scheduler (Cloud Backup)"]
-        SchedLambda --> IoTCore["AWS IoT Device Shadow<br/>(Desired Schedules Array)"]
+        SchedLambda --> EventBridge["Amazon EventBridge<br/>Scheduler Cloud Backup"]
+        SchedLambda --> IoTCore["AWS IoT Device Shadow<br/>Desired Schedules Array"]
     end
 
     subgraph Edge["Socket Edge Execution"]
-        IoTCore -->|Sync Shadow Delta| Socket["ESP32 Flash Storage<br/>(Local Schedule Cache)"]
-        NTP["AWS Time Sync Service<br/>(Chrono SNTP / UDP 123)"] -.->|Sync Real-Time Clock| Socket
-        Socket --> LocalRTC["Hardware RTC & Alarm"]
+        IoTCore -->|Sync Shadow Delta| Socket["ESP32 Flash Storage<br/>Local Schedule Cache"]
+        NTP["AWS Time Sync Service - SNTP UDP 123"] -->|Sync Real-Time Clock| Socket
+        Socket --> LocalRTC["Hardware RTC and Alarm"]
         LocalRTC --> RelayActuator["Zero-Crossing Relay Cutoff"]
     end
 ```
@@ -442,20 +440,20 @@ flowchart TD
     end
 
     subgraph DataFetch["Data Gathering"]
-        Lambda_Billing --> Timestream[("Timestream<br/>(Fetch Month-to-Date kWh)")]
-        Lambda_Billing --> DynamoDB[("DynamoDB<br/>(Fetch Tariff Slabs & Fixed Charges)")]
+        Lambda_Billing --> Timestream[("Timestream - Fetch Month-to-Date kWh")]
+        Lambda_Billing --> DynamoDB[("DynamoDB - Fetch Tariff Slabs and Fixed Charges")]
     end
 
     subgraph Engine["Progressive Slab Billing Algorithm"]
-        DynamoDB --> CalcSlabs["Calculate Slabs:<br/>0-100 kWh @ ₹6.00<br/>101-200 kWh @ ₹8.00<br/>>200 kWh @ ₹9.50"]
-        CalcSlabs --> AddFixed["Add Fixed Meter Charge (₹120)"]
-        AddFixed --> AddDuty["Add State Electricity Duty (2.0%)"]
+        DynamoDB --> CalcSlabs["Calculate Slabs:<br/>0 to 100 kWh @ ₹6.00<br/>101 to 200 kWh @ ₹8.00<br/>Above 200 kWh @ ₹9.50"]
+        CalcSlabs --> AddFixed["Add Fixed Meter Charge: ₹120"]
+        AddFixed --> AddDuty["Add State Electricity Duty: 2.0%"]
         AddDuty --> GenEstimate["Generate Current Estimated Bill"]
     end
 
-    subgraph Reconciliation["Bill Accrual & Budgeting"]
-        GenEstimate --> BudgetCheck{"Compare to Monthly Budget"}
-        BudgetCheck -->|Exceeds 80% or 100%| SendAlert["Trigger SNS Budget Alert"]
+    subgraph Reconciliation["Bill Accrual and Budgeting"]
+        GenEstimate --> BudgetCheck{"Check Monthly Budget Limit"}
+        BudgetCheck -->|Exceeds Budget| SendAlert["Trigger SNS Budget Alert"]
         BudgetCheck -->|Normal| StoreAccrual["Write Accrual to DynamoDB"]
         StoreAccrual --> NotifyClient["Push WebSocket Update to Flutter"]
     end
@@ -479,10 +477,10 @@ flowchart LR
     Timestream[("Timestream Telemetry")] --> Firehose["Kinesis Firehose"]
     Firehose --> S3_Lake[("S3 Parquet Data Lake")]
     S3_Lake --> Glue["AWS Glue Data Catalog"]
-    Glue --> SageMaker["Amazon SageMaker Pipeline<br/>(Daily Model Training)"]
-    SageMaker --> Bedrock["Amazon Bedrock<br/>(LLM Insight Synthesizer)"]
-    Bedrock --> DynamoDB[("DynamoDB (AI Insights)")]
-    DynamoDB --> App["Flutter AI Energy Tab<br/>(Marked with 'Estimated' Sparkle)"]
+    Glue --> SageMaker["Amazon SageMaker Pipeline - Daily Model Training"]
+    SageMaker --> Bedrock["Amazon Bedrock - LLM Insight Synthesizer"]
+    Bedrock --> DynamoDB[("DynamoDB - AI Insights")]
+    DynamoDB --> App["Flutter AI Energy Tab - Estimated Insights"]
 ```
 
 ---
@@ -578,22 +576,22 @@ Endpoint: `wss://api.sems.energy/ws/v1?token={CognitoJWT}`
 flowchart TD
     subgraph ZeroTrustEdge["Edge Security"]
         CryptoChip["ATECC608A Secure Element<br/>Hardware Root-of-Trust"]
-        mTLS["Mutual TLS 1.3 Encryption<br/>(X.509 Client Certs)"]
+        mTLS["Mutual TLS 1.3 Encryption<br/>X.509 Client Certs"]
     end
 
-    subgraph NetworkSec["Network & Perimeter Security"]
-        WAF["AWS WAF (Web Application Firewall)<br/>Rate Limiting, SQLi, XSS"]
-        IoTPolicy["AWS IoT Least-Privilege Policies<br/>(Scoped to device_id)"]
+    subgraph NetworkSec["Network and Perimeter Security"]
+        WAF["AWS WAF Web Application Firewall<br/>Rate Limiting, SQLi, XSS"]
+        IoTPolicy["AWS IoT Least-Privilege Policies<br/>Scoped to device_id"]
     end
 
-    subgraph IAM_Auth["Identity & Authorization"]
+    subgraph IAM_Auth["Identity and Authorization"]
         CognitoAuth["Cognito Token Verification"]
-        RoleGuard["Lambda Authorizer RBAC<br/>(Owner vs Family Evaluation)"]
+        RoleGuard["Lambda Authorizer RBAC<br/>Owner vs Family Evaluation"]
     end
 
     subgraph DataSec["Data Protection"]
-        KMS["AWS KMS (Customer Managed Keys)<br/>Envelope Encryption (AES-256)"]
-        PII["PII Redaction & Retention Rules"]
+        KMS["AWS KMS Customer Managed Keys<br/>Envelope Encryption AES-256"]
+        PII["PII Redaction and Retention Rules"]
     end
 
     CryptoChip --> mTLS
@@ -620,33 +618,33 @@ The current Flutter application relies on `SemsRepository` backed by `DriftSemsR
 
 ```mermaid
 flowchart TD
-    subgraph Presentation["UI & Presentation Layer"]
-        Widgets["Screens, Widgets, Sheets<br/>(DashboardScreen, RemoteControlScreen)"]
-        Providers["Riverpod Providers<br/>(deviceListProvider, telemetryStreamProvider)"]
+    subgraph Presentation["UI and Presentation Layer"]
+        Widgets["Screens, Widgets, Sheets<br/>DashboardScreen, RemoteControlScreen"]
+        Providers["Riverpod Providers<br/>deviceListProvider, telemetryStreamProvider"]
     end
 
-    subgraph Domain["Domain Layer (Unchanged)"]
+    subgraph Domain["Domain Layer Unchanged"]
         RepoContract["abstract interface class SemsRepository"]
     end
 
     subgraph DataLayer["Data Layer Implementation"]
         direction TB
         subgraph Current["Current Local Mode"]
-            DriftRepo["DriftSemsRepository<br/>(Local SQLite + Simulators)"]
+            DriftRepo["DriftSemsRepository<br/>Local SQLite and Simulators"]
         end
         subgraph Future["AWS Cloud Production Mode"]
-            AwsRepo["AwsSemsRepository<br/>(Amplify / Dio / AWS IoT WSS)"]
-            DriftCache["Drift Database<br/>(Offline Cache Store)"]
-            SyncEngine["Offline Sync Engine<br/>(Optimistic Updates & Reconciliation)"]
+            AwsRepo["AwsSemsRepository<br/>Amplify, Dio, AWS IoT WSS"]
+            DriftCache["Drift Database<br/>Offline Cache Store"]
+            SyncEngine["Offline Sync Engine<br/>Optimistic Updates and Reconciliation"]
         end
     end
 
     Widgets --> Providers
     Providers --> RepoContract
-    RepoContract -.->|Dev/Demo Flavor| DriftRepo
-    RepoContract -.->|Production Flavor| AwsRepo
+    RepoContract -->|Dev and Demo Mode| DriftRepo
+    RepoContract -->|Production Mode| AwsRepo
     AwsRepo --> DriftCache
-    AwsRepo <--> SyncEngine
+    AwsRepo --- SyncEngine
 ```
 
 ### 9.2 Offline-First Sync Architecture
