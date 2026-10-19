@@ -428,10 +428,10 @@ class _DataCoverageCard extends StatelessWidget {
       subtitle = 'Enough history for forecasts and personal baselines.';
     } else if (days >= 5) {
       label = '$days days · Basic';
-      badgeBg = const Color(0xFFFDF6B2);
-      badgeText = const Color(0xFF723B10);
-      progress = 0.16;
-      progressColor = const Color(0xFFD97706);
+      badgeBg = const Color(0xFFFCF0D9);
+      badgeText = const Color(0xFFD98A00);
+      progress = 36.22 / 326;
+      progressColor = const Color(0xFFD98A00);
       subtitle = 'Anomaly checks are on. Forecasts unlock at 7 days.';
     } else {
       label = '$days days · Collecting';
