@@ -421,10 +421,10 @@ class _DataCoverageCard extends StatelessWidget {
       subtitle = 'Enough history for forecasts and personal baselines.';
     } else if (days >= 10) {
       label = '$days days · Good';
-      badgeBg = const Color(0xFFDEF7EC);
-      badgeText = const Color(0xFF03543F);
-      progress = 0.33;
-      progressColor = const Color(0xFF0E9F6E);
+      badgeBg = const Color(0xFFE2F1E8);
+      badgeText = const Color(0xFF2E9E5B);
+      progress = 72.44 / 326;
+      progressColor = const Color(0xFF2E9E5B);
       subtitle = 'Enough history for forecasts and personal baselines.';
     } else if (days >= 5) {
       label = '$days days · Basic';
