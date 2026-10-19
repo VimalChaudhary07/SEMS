@@ -89,191 +89,226 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F6),
-      bottomNavigationBar: widget.bottomNavigationBar,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Status bar (24px)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: SizedBox(
-                height: 24,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      '09:41',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF0F1714),
+    final bodyContent = SafeArea(
+      child: Column(
+        children: [
+          // Status bar (24px)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: SizedBox(
+              height: 24,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '09:41',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F1714),
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        AppAssets.iconWifi,
+                        width: 12,
+                        height: 12,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF0F1714),
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        '100%',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0F1714),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Top bar (56px)
+          Padding(
+            padding: EdgeInsets.only(
+              left: 8,
+              right: _status == BackupScreenStatus.familyOwnerOnly ? 8 : 16,
+            ),
+            child: SizedBox(
+              height: 56,
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: widget.onBack ?? () => Navigator.of(context).maybePop(),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      alignment: Alignment.center,
+                      child: SvgPicture.asset(
+                        AppAssets.iconChevLeft,
+                        width: 24,
+                        height: 24,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF0F1714),
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SvgPicture.asset(
-                          AppAssets.iconWifi,
-                          width: 12,
-                          height: 12,
-                          colorFilter: const ColorFilter.mode(
-                            Color(0xFF0F1714),
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
                         const Text(
-                          '100%',
+                          'Backup',
                           style: TextStyle(
                             fontFamily: 'Inter',
-                            fontSize: 11,
+                            fontSize: 20,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF0F1714),
+                            height: 1.2,
                           ),
                         ),
+                        if (_status != BackupScreenStatus.familyOwnerOnly)
+                          Text(
+                            (_status == BackupScreenStatus.notConnected ||
+                                    _status ==
+                                        BackupScreenStatus.googleAccountChooser)
+                                ? 'Not connected'
+                                : 'Google Drive',
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF55625D),
+                              height: 1.33,
+                            ),
+                          ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Top bar (56px)
-            Padding(
-              padding: EdgeInsets.only(
-                left: 8,
-                right: _status == BackupScreenStatus.familyOwnerOnly ? 8 : 16,
-              ),
-              child: SizedBox(
-                height: 56,
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: widget.onBack ?? () => Navigator.of(context).maybePop(),
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        alignment: Alignment.center,
-                        child: SvgPicture.asset(
-                          AppAssets.iconChevLeft,
-                          width: 24,
-                          height: 24,
-                          colorFilter: const ColorFilter.mode(
-                            Color(0xFF0F1714),
-                            BlendMode.srcIn,
-                          ),
+                  ),
+                  if (_status == BackupScreenStatus.familyOwnerOnly)
+                    Container(
+                      height: 20,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3ECFD),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        'Family',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2F6FED),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'Backup',
+                    )
+                  else
+                    ValueListenableBuilder<DemoRole>(
+                      valueListenable: DemoSession.role,
+                      builder: (context, role, _) {
+                        final isOwner = role == DemoRole.owner;
+                        return Container(
+                          height: 20,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: isOwner
+                                ? const Color(0xFFDDF4EA)
+                                : const Color(0xFFECEEF0),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            isOwner ? 'Owner' : 'Member',
                             style: TextStyle(
                               fontFamily: 'Inter',
-                              fontSize: 20,
+                              fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF0F1714),
-                              height: 1.2,
-                            ),
-                          ),
-                          if (_status != BackupScreenStatus.familyOwnerOnly)
-                            Text(
-                              _status == BackupScreenStatus.notConnected
-                                  ? 'Not connected'
-                                  : 'Google Drive',
-                              style: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                                color: Color(0xFF55625D),
-                                height: 1.33,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (_status == BackupScreenStatus.familyOwnerOnly)
-                      Container(
-                        height: 20,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE3ECFD),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          'Family',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2F6FED),
-                          ),
-                        ),
-                      )
-                    else
-                      ValueListenableBuilder<DemoRole>(
-                        valueListenable: DemoSession.role,
-                        builder: (context, role, _) {
-                          final isOwner = role == DemoRole.owner;
-                          return Container(
-                            height: 20,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
                               color: isOwner
-                                  ? const Color(0xFFDDF4EA)
-                                  : const Color(0xFFECEEF0),
-                              borderRadius: BorderRadius.circular(999),
+                                  ? const Color(0xFF0E9F6E)
+                                  : const Color(0xFF7A8594),
                             ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              isOwner ? 'Owner' : 'Member',
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: isOwner
-                                    ? const Color(0xFF0E9F6E)
-                                    : const Color(0xFF7A8594),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                  ],
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          // Content
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                4,
+                16,
+                _status == BackupScreenStatus.familyOwnerOnly ? 0 : 24,
+              ),
+              child: _buildContent(),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (_status == BackupScreenStatus.googleAccountChooser) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF4F7F6),
+        bottomNavigationBar: widget.bottomNavigationBar,
+        body: Stack(
+          children: [
+            bodyContent,
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _status = BackupScreenStatus.notConnected;
+                  });
+                },
+                child: Container(
+                  color: const Color.fromRGBO(0, 0, 0, 0.45),
                 ),
               ),
             ),
-
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  4,
-                  16,
-                  _status == BackupScreenStatus.familyOwnerOnly ? 0 : 24,
-                ),
-                child: _buildContent(),
-              ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildGoogleAccountChooserSheet(),
             ),
           ],
         ),
-      ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F7F6),
+      bottomNavigationBar: widget.bottomNavigationBar,
+      body: bodyContent,
     );
   }
 
   Widget _buildContent() {
     switch (_status) {
       case BackupScreenStatus.notConnected:
+      case BackupScreenStatus.googleAccountChooser:
         return _buildNotConnectedContent();
       case BackupScreenStatus.syncing:
         return _buildSyncingContent();
@@ -287,6 +322,284 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
       default:
         return _buildConnectedContent();
     }
+  }
+
+  Widget _buildGoogleAccountChooserSheet() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Grab handle (18px)
+          Padding(
+            padding: const EdgeInsets.only(top: 10, bottom: 4),
+            child: Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE1E9E5),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+          ),
+
+          // Header row (52px)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: SizedBox(
+              height: 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Choose an account',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F1714),
+                      height: 24 / 18,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _status = BackupScreenStatus.notConnected;
+                      });
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      child: SvgPicture.asset(
+                        AppAssets.iconClose,
+                        width: 20,
+                        height: 20,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF0F1714),
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Accounts & permission card group
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Accounts card (119px)
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE1E9E5)),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color.fromRGBO(16, 22, 20, 0.05),
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    ),
+                    BoxShadow(
+                      color: Color.fromRGBO(16, 22, 20, 0.05),
+                      blurRadius: 14,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _buildAccountRow(
+                      email: 'asha.verma@gmail.com',
+                      name: 'Asha Verma',
+                      onTap: () {},
+                    ),
+                    Container(
+                      height: 1,
+                      color: const Color(0xFFE1E9E5),
+                    ),
+                    _buildAccountRow(
+                      email: 'asha.work@company.com',
+                      name: 'Asha V',
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Permission banner (84px)
+              _buildPermissionBanner(),
+
+              const SizedBox(height: 12),
+
+              // Allow access button (48px)
+              GestureDetector(
+                onTap: widget.onConnectDrive ?? () {},
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0E9F6E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'Allow access',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountRow({
+    required String email,
+    required String name,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF1EE),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: SvgPicture.asset(
+                AppAssets.iconUser,
+                width: 19,
+                height: 19,
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFF55625D),
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    email,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF0F1714),
+                      height: 20 / 15,
+                    ),
+                  ),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF55625D),
+                      height: 18 / 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SvgPicture.asset(
+              AppAssets.iconChevRight,
+              width: 18,
+              height: 18,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF55625D),
+                BlendMode.srcIn,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPermissionBanner() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFE3ECFD),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF2F6FED)),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: SvgPicture.asset(
+              AppAssets.iconLock,
+              width: 19,
+              height: 19,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF2F6FED),
+                BlendMode.srcIn,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'SEMS asks for one permission',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                    height: 20 / 13,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Create and manage only the files SEMS creates in your Drive. It cannot see your other files.',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF55625D),
+                    height: 18 / 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildFamilyOwnerOnlyContent() {
