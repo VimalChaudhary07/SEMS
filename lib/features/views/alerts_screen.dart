@@ -16,10 +16,12 @@ class AlertsScreen extends StatefulWidget {
     required this.repository,
     this.initialFilter,
     this.bottomNavigationBar,
+    this.showTrippedBanner,
   });
   final SemsRepository repository;
   final String? initialFilter;
   final Widget? bottomNavigationBar;
+  final bool? showTrippedBanner;
 
   @override
   State<AlertsScreen> createState() => _AlertsScreenState();
@@ -174,6 +176,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
             },
           ),
           const SizedBox(height: 12),
+          if (selected == 'Electrical' && (widget.showTrippedBanner ?? true)) ...[
+            const _TrippedBanner(),
+            const SizedBox(height: 10),
+          ],
           if (alerts.isEmpty)
             const EmptyState(
               title: 'No alerts in this category',
@@ -729,4 +735,63 @@ class _AlertSettingsSheetState extends State<_AlertSettingsSheet> {
             ),
     ),
   );
+}
+
+class _TrippedBanner extends StatelessWidget {
+  const _TrippedBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFBE6E6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD64545)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SvgPicture.asset(
+            AppAssets.iconAlert,
+            width: 19,
+            height: 19,
+            colorFilter: const ColorFilter.mode(
+              Color(0xFFD64545),
+              BlendMode.srcIn,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Tripped: Over-current',
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 13,
+                    height: 20 / 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Relay turned OFF. Recovering in 42 s (attempt 1 of 3).',
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 12,
+                    height: 18 / 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF55625D),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
