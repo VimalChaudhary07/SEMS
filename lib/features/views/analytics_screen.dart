@@ -23,11 +23,13 @@ class AnalyticsScreen extends StatefulWidget {
     this.initialRange,
     this.initialAppliance,
     this.bottomNavigationBar,
+    this.showTelemetryGap = false,
   });
   final SemsRepository repository;
   final String? initialRange;
   final String? initialAppliance;
   final Widget? bottomNavigationBar;
+  final bool showTelemetryGap;
 
   @override
   State<AnalyticsScreen> createState() => _AnalyticsScreenState();
@@ -150,7 +152,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               inspected: inspected,
               selectedIndex: selectedBar,
               onBarSelected: (index) => setState(() => selectedBar = index),
+              showTelemetryGap: widget.showTelemetryGap,
             ),
+            if (widget.showTelemetryGap) ...[
+              const SizedBox(height: 16),
+              const _TelemetryGapBanner(),
+            ],
             const SizedBox(height: 16),
             // 3 compact metric cards
             _HistoryMetricsRow(
@@ -161,6 +168,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             // Local data coverage card
             _CoverageCard(
               coverageDays: widget.repository.coverageDays,
+              showTelemetryGap: widget.showTelemetryGap,
             ),
             const SizedBox(height: 24),
             // Sessions section
@@ -385,6 +393,7 @@ class _HistoryChartCard extends StatelessWidget {
     required this.inspected,
     required this.selectedIndex,
     required this.onBarSelected,
+    this.showTelemetryGap = false,
   });
 
   final String range;
@@ -394,6 +403,7 @@ class _HistoryChartCard extends StatelessWidget {
   final EnergyReading? inspected;
   final int? selectedIndex;
   final ValueChanged<int> onBarSelected;
+  final bool showTelemetryGap;
 
   @override
   Widget build(BuildContext context) {
@@ -463,6 +473,7 @@ class _HistoryChartCard extends StatelessWidget {
             selectedIndex: selectedIndex,
             onSelected: onBarSelected,
             range: range,
+            showTelemetryGap: showTelemetryGap,
           ),
           const SizedBox(height: 12),
           // Caption
@@ -534,6 +545,7 @@ class _HistoryBarChart extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelected,
     required this.range,
+    this.showTelemetryGap = false,
   });
 
   final List<EnergyReading> readings;
@@ -541,6 +553,7 @@ class _HistoryBarChart extends StatelessWidget {
   final int? selectedIndex;
   final ValueChanged<int> onSelected;
   final String range;
+  final bool showTelemetryGap;
 
   @override
   Widget build(BuildContext context) {
@@ -588,7 +601,7 @@ class _HistoryBarChart extends StatelessWidget {
                     ),
                   ),
                 )
-              else
+              else ...[
                 // Bars overlay
                 Positioned(
                   left: 32,
@@ -600,31 +613,62 @@ class _HistoryBarChart extends StatelessWidget {
                     children: [
                       for (var i = 0; i < readings.length; i++) ...[
                         Expanded(
-                          child: InkWell(
-                            key: ValueKey('history-bar-$i'),
-                            onTap: () => onSelected(i),
-                            child: FractionallySizedBox(
-                              heightFactor:
-                                  (readings[i].kwh / effectiveMax).clamp(0.04, 1.0),
-                              alignment: Alignment.bottomCenter,
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 2),
-                                decoration: BoxDecoration(
-                                  color: selectedIndex == i
-                                      ? const Color(0xFF0A7D56)
-                                      : colors.brandPrimary,
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(3),
+                          child: (showTelemetryGap && i >= 9 && i <= 14)
+                              ? const SizedBox()
+                              : InkWell(
+                                  key: ValueKey('history-bar-$i'),
+                                  onTap: () => onSelected(i),
+                                  child: FractionallySizedBox(
+                                    heightFactor:
+                                        (readings[i].kwh / effectiveMax).clamp(0.04, 1.0),
+                                    alignment: Alignment.bottomCenter,
+                                    child: Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                                      decoration: BoxDecoration(
+                                        color: selectedIndex == i
+                                            ? const Color(0xFF0A7D56)
+                                            : colors.brandPrimary,
+                                        borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(3),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          ),
                         ),
                       ],
                     ],
                   ),
                 ),
+                if (showTelemetryGap)
+                  Positioned(
+                    left: 32 + (9 * (294.0 / 24.0)) - 1,
+                    width: (6 * (294.0 / 24.0)) + 2,
+                    top: 8,
+                    bottom: 8,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAF1EE),
+                        border: Border.all(
+                          color: const Color(0xFF55625D),
+                          width: 1,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        'No data received',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: AppText.family,
+                          fontSize: 11,
+                          height: 14 / 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF55625D),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ],
           ),
         ),
@@ -1090,10 +1134,76 @@ class _HistoryMetricsRow extends StatelessWidget {
   }
 }
 
+class _TelemetryGapBanner extends StatelessWidget {
+  const _TelemetryGapBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFCF0D9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFD98A00),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SvgPicture.asset(
+            AppAssets.iconClock,
+            width: 19,
+            height: 19,
+            colorFilter: const ColorFilter.mode(
+              Color(0xFFD98A00),
+              BlendMode.srcIn,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Telemetry gap',
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 13,
+                    height: 20 / 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'No data received between 05:10 and 06:20. Gaps are shown empty, never filled in.',
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 12,
+                    height: 18 / 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF55625D),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CoverageCard extends StatelessWidget {
-  const _CoverageCard({required this.coverageDays});
+  const _CoverageCard({
+    required this.coverageDays,
+    this.showTelemetryGap = false,
+  });
 
   final int coverageDays;
+  final bool showTelemetryGap;
 
   @override
   Widget build(BuildContext context) {
@@ -1124,7 +1234,7 @@ class _CoverageCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '100%',
+                showTelemetryGap ? '88%' : '100%',
                 style: TextStyle(
                   fontFamily: AppText.family,
                   fontSize: 13,
@@ -1144,10 +1254,12 @@ class _CoverageCard extends StatelessWidget {
             ),
             alignment: Alignment.centerLeft,
             child: FractionallySizedBox(
-              widthFactor: 1.0,
+              widthFactor: showTelemetryGap ? 0.88 : 1.0,
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E9E5B),
+                  color: showTelemetryGap
+                      ? const Color(0xFFD98A00)
+                      : const Color(0xFF2E9E5B),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
