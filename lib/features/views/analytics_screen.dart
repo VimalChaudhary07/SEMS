@@ -24,12 +24,14 @@ class AnalyticsScreen extends StatefulWidget {
     this.initialAppliance,
     this.bottomNavigationBar,
     this.showTelemetryGap = false,
+    this.showExportSheetOnStart = false,
   });
   final SemsRepository repository;
   final String? initialRange;
   final String? initialAppliance;
   final Widget? bottomNavigationBar;
   final bool showTelemetryGap;
+  final bool showExportSheetOnStart;
 
   @override
   State<AnalyticsScreen> createState() => _AnalyticsScreenState();
@@ -45,6 +47,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     super.initState();
     range = widget.initialRange ?? 'Hour';
     selectedAppliance = widget.initialAppliance ?? 'All appliances';
+    if (widget.showExportSheetOnStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _export();
+        }
+      });
+    }
   }
 
   List<EnergyReading> get _readings => switch (range) {

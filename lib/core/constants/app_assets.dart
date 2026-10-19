@@ -58,6 +58,8 @@ abstract final class AppAssets {
   static const iconLayers = 'assets/figma/icons/layers.svg';
   static const iconCalendar = 'assets/figma/icons/calendar.svg';
   static const iconReceipt = 'assets/figma/icons/receipt.svg';
+  static const iconFile = 'assets/figma/icons/file.svg';
+  static const iconCopy = 'assets/figma/icons/copy.svg';
   static const iconUser = 'assets/figma/icons/user.svg';
   static const iconMoon = 'assets/figma/icons/moon.svg';
   static const iconMoonOvernight = 'assets/figma/icons/moon_overnight.svg';
