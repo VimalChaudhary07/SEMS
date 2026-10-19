@@ -143,7 +143,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           // Top bar (56px)
           Padding(
             padding: EdgeInsets.only(
-              left: 8,
+              left: _status == BackupScreenStatus.restore5Done ? 20 : 8,
               right: (_status == BackupScreenStatus.familyOwnerOnly ||
                       _isRestoreFlow)
                   ? 8
@@ -153,23 +153,24 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
               height: 56,
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: widget.onBack ?? () => Navigator.of(context).maybePop(),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      alignment: Alignment.center,
-                      child: SvgPicture.asset(
-                        AppAssets.iconChevLeft,
-                        width: 24,
-                        height: 24,
-                        colorFilter: const ColorFilter.mode(
-                          Color(0xFF0F1714),
-                          BlendMode.srcIn,
+                  if (_status != BackupScreenStatus.restore5Done)
+                    GestureDetector(
+                      onTap: widget.onBack ?? () => Navigator.of(context).maybePop(),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        alignment: Alignment.center,
+                        child: SvgPicture.asset(
+                          AppAssets.iconChevLeft,
+                          width: 24,
+                          height: 24,
+                          colorFilter: const ColorFilter.mode(
+                            Color(0xFF0F1714),
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,7 +265,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                         _status == BackupScreenStatus.restore1FindBackup ||
                         _status == BackupScreenStatus.restore2Validating ||
                         _status == BackupScreenStatus.restore3Review ||
-                        _status == BackupScreenStatus.restore4Restoring)
+                        _status == BackupScreenStatus.restore4Restoring ||
+                        _status == BackupScreenStatus.restore5Done)
                     ? 0
                     : 24,
               ),
@@ -359,6 +361,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         return _buildRestore3ReviewContent();
       case BackupScreenStatus.restore4Restoring:
         return _buildRestore4RestoringContent();
+      case BackupScreenStatus.restore5Done:
+        return _buildRestore5DoneContent();
       case BackupScreenStatus.manualBackupSheet:
       case BackupScreenStatus.verifyResultSheet:
       case BackupScreenStatus.connected:
@@ -2565,7 +2569,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
       case BackupScreenStatus.restore4Restoring:
         return 'Step 4 of 4';
       case BackupScreenStatus.restore5Done:
-        return 'Restore complete';
+        return null;
       case BackupScreenStatus.notConnected:
       case BackupScreenStatus.googleAccountChooser:
         return 'Not connected';
@@ -3370,6 +3374,136 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         ),
 
         const SizedBox(height: 500),
+        Center(
+          child: Container(
+            width: 112,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F1714),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+      ],
+    );
+  }
+
+  Widget _buildRestore5DoneContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 32),
+          child: Column(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE2F1E8),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: SvgPicture.asset(
+                  AppAssets.iconCheck,
+                  width: 34,
+                  height: 34,
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFF2E9E5B),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+              const Text(
+                'Restore complete',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F1714),
+                  height: 32 / 24,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  'Your history is back and your sockets are reconnected. No duplicates were created.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF55625D),
+                    height: 22 / 14,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE1E9E5)),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color.fromRGBO(16, 22, 20, 0.05),
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    ),
+                    BoxShadow(
+                      color: Color.fromRGBO(16, 22, 20, 0.05),
+                      blurRadius: 14,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _buildReviewRow(
+                      title: 'Sockets reconnected',
+                      trailing: '3 of 3',
+                    ),
+                    Container(height: 1, color: const Color(0xFFE1E9E5)),
+                    _buildReviewRow(
+                      title: 'Duplicate batches skipped',
+                      trailing: '12',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _status = BackupScreenStatus.connected;
+                  });
+                },
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0E9F6E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'Go to dashboard',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 299),
         Center(
           child: Container(
             width: 112,
