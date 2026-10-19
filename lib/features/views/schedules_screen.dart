@@ -1240,6 +1240,24 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
         ),
       );
 
+  String? _getIntervalOverlapError(int index) {
+    if (index >= _intervals.length) return null;
+    final current = _intervals[index];
+    final curStart = _minutes(current.start);
+    final curEnd = _minutes(current.end);
+    for (var j = 0; j < index; j++) {
+      final other = _intervals[j];
+      final othStart = _minutes(other.start);
+      final othEnd = _minutes(other.end);
+      if (curStart < curEnd && othStart < othEnd) {
+        if (curStart < othEnd && curEnd > othStart) {
+          return 'Overlaps with ${other.start}–${other.end}';
+        }
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final appliances = widget.repository.appliances
@@ -1684,166 +1702,203 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                       const SizedBox(height: 10),
                       for (var index = 0;
                           index < _intervals.length;
-                          index++) ...[
-                        if (index > 0) const SizedBox(height: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border:
-                                    Border.all(color: const Color(0xFFE1E9E5)),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color.fromRGBO(16, 22, 20, 0.05),
-                                    blurRadius: 2,
-                                    offset: Offset(0, 1),
+                          index++) ...() {
+                        final overlapError = _getIntervalOverlapError(index);
+                        return <Widget>[
+                          if (index > 0) const SizedBox(height: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: overlapError != null
+                                        ? const Color(0xFFD64545)
+                                        : const Color(0xFFE1E9E5),
                                   ),
-                                  BoxShadow(
-                                    color: Color.fromRGBO(16, 22, 20, 0.05),
-                                    blurRadius: 14,
-                                    offset: Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: InkWell(
-                                      onTap: () => _pickTime(index, true),
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Container(
-                                        height: 44,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFEAF1EE),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          _intervals[index].start,
-                                          style: const TextStyle(
-                                            fontFamily: AppText.family,
-                                            fontSize: 15,
-                                            height: 20 / 15,
-                                            fontWeight: FontWeight.w500,
-                                            color: Color(0xFF0F1714),
-                                          ),
-                                        ),
-                                      ),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color.fromRGBO(16, 22, 20, 0.05),
+                                      blurRadius: 2,
+                                      offset: Offset(0, 1),
                                     ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8),
-                                    child: SvgPicture.asset(
-                                      AppAssets.iconChevRight,
-                                      width: 16,
-                                      height: 16,
-                                      colorFilter: const ColorFilter.mode(
-                                        Color(0xFF55625D),
-                                        BlendMode.srcIn,
-                                      ),
+                                    BoxShadow(
+                                      color: Color.fromRGBO(16, 22, 20, 0.05),
+                                      blurRadius: 14,
+                                      offset: Offset(0, 4),
                                     ),
-                                  ),
-                                  Expanded(
-                                    child: InkWell(
-                                      onTap: () => _pickTime(index, false),
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Container(
-                                        height: 44,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFEAF1EE),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          _intervals[index].end,
-                                          style: const TextStyle(
-                                            fontFamily: AppText.family,
-                                            fontSize: 15,
-                                            height: 20 / 15,
-                                            fontWeight: FontWeight.w500,
-                                            color: Color(0xFF0F1714),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  if (_multiple) ...[
-                                    const SizedBox(width: 4),
-                                    Tooltip(
-                                      message: 'Remove interval',
+                                  ],
+                                ),
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  children: [
+                                    Expanded(
                                       child: InkWell(
-                                        onTap: _intervals.length == 1
-                                            ? null
-                                            : () => setState(
-                                                  () => _intervals
-                                                      .removeAt(index),
-                                                ),
+                                        onTap: () => _pickTime(index, true),
                                         borderRadius: BorderRadius.circular(8),
-                                        child: SizedBox(
-                                          width: 40,
-                                          height: 40,
-                                          child: Center(
-                                            child: SvgPicture.asset(
-                                              AppAssets.iconClose,
-                                              width: 18,
-                                              height: 18,
-                                              colorFilter:
-                                                  const ColorFilter.mode(
-                                                Color(0xFF55625D),
-                                                BlendMode.srcIn,
-                                              ),
+                                        child: Container(
+                                          height: 44,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFEAF1EE),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            _intervals[index].start,
+                                            style: const TextStyle(
+                                              fontFamily: AppText.family,
+                                              fontSize: 15,
+                                              height: 20 / 15,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF0F1714),
                                             ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            if (_kind == 'overnight' ||
-                                _minutes(_intervals[index].end) <
-                                    _minutes(_intervals[index].start)) ...[
-                              const SizedBox(height: 6),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 4),
-                                child: Row(
-                                  children: [
-                                    SvgPicture.asset(
-                                      AppAssets.iconMoonOvernight,
-                                      width: 13,
-                                      height: 13,
-                                      colorFilter: const ColorFilter.mode(
-                                        Color(0xFFD98A00),
-                                        BlendMode.srcIn,
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                      child: SvgPicture.asset(
+                                        AppAssets.iconChevRight,
+                                        width: 16,
+                                        height: 16,
+                                        colorFilter: const ColorFilter.mode(
+                                          Color(0xFF55625D),
+                                          BlendMode.srcIn,
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(width: 4),
-                                    const Text(
-                                      'Ends next day',
-                                      style: TextStyle(
-                                        fontFamily: AppText.family,
-                                        fontSize: 12,
-                                        height: 16 / 12,
-                                        fontWeight: FontWeight.w400,
-                                        color: Color(0xFFD98A00),
+                                    Expanded(
+                                      child: InkWell(
+                                        onTap: () => _pickTime(index, false),
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Container(
+                                          height: 44,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFEAF1EE),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            _intervals[index].end,
+                                            style: const TextStyle(
+                                              fontFamily: AppText.family,
+                                              fontSize: 15,
+                                              height: 20 / 15,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF0F1714),
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
+                                    if (_multiple) ...[
+                                      const SizedBox(width: 4),
+                                      Tooltip(
+                                        message: 'Remove interval',
+                                        child: InkWell(
+                                          onTap: _intervals.length == 1
+                                              ? null
+                                              : () => setState(
+                                                    () => _intervals
+                                                        .removeAt(index),
+                                                  ),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          child: SizedBox(
+                                            width: 40,
+                                            height: 40,
+                                            child: Center(
+                                              child: SvgPicture.asset(
+                                                AppAssets.iconClose,
+                                                width: 18,
+                                                height: 18,
+                                                colorFilter:
+                                                    const ColorFilter.mode(
+                                                  Color(0xFF55625D),
+                                                  BlendMode.srcIn,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
+                              if (overlapError != null) ...[
+                                const SizedBox(height: 6),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4),
+                                  child: Row(
+                                    children: [
+                                      SvgPicture.asset(
+                                        AppAssets.iconAlert,
+                                        width: 13,
+                                        height: 13,
+                                        colorFilter: const ColorFilter.mode(
+                                          Color(0xFFD64545),
+                                          BlendMode.srcIn,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        overlapError,
+                                        style: const TextStyle(
+                                          fontFamily: AppText.family,
+                                          fontSize: 12,
+                                          height: 16 / 12,
+                                          fontWeight: FontWeight.w400,
+                                          color: Color(0xFFD64545),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ] else if (_kind == 'overnight' ||
+                                  _minutes(_intervals[index].end) <
+                                      _minutes(_intervals[index].start)) ...[
+                                const SizedBox(height: 6),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4),
+                                  child: Row(
+                                    children: [
+                                      SvgPicture.asset(
+                                        AppAssets.iconMoonOvernight,
+                                        width: 13,
+                                        height: 13,
+                                        colorFilter: const ColorFilter.mode(
+                                          Color(0xFFD98A00),
+                                          BlendMode.srcIn,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Text(
+                                        'Ends next day',
+                                        style: TextStyle(
+                                          fontFamily: AppText.family,
+                                          fontSize: 12,
+                                          height: 16 / 12,
+                                          fontWeight: FontWeight.w400,
+                                          color: Color(0xFFD98A00),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
-                      ],
+                          ),
+                        ];
+                      }(),
                       if (_multiple) ...[
                         const SizedBox(height: 10),
                         Align(
