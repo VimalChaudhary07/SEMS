@@ -143,7 +143,10 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
 
             // Top bar (56px)
             Padding(
-              padding: const EdgeInsets.only(left: 8, right: 16),
+              padding: EdgeInsets.only(
+                left: 8,
+                right: _status == BackupScreenStatus.familyOwnerOnly ? 8 : 16,
+              ),
               child: SizedBox(
                 height: 56,
                 child: Row(
@@ -180,49 +183,70 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                               height: 1.2,
                             ),
                           ),
-                          Text(
-                            _status == BackupScreenStatus.notConnected
-                                ? 'Not connected'
-                                : 'Google Drive',
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFF55625D),
-                              height: 1.33,
+                          if (_status != BackupScreenStatus.familyOwnerOnly)
+                            Text(
+                              _status == BackupScreenStatus.notConnected
+                                  ? 'Not connected'
+                                  : 'Google Drive',
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF55625D),
+                                height: 1.33,
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
-                    ValueListenableBuilder<DemoRole>(
-                      valueListenable: DemoSession.role,
-                      builder: (context, role, _) {
-                        final isOwner = role == DemoRole.owner;
-                        return Container(
-                          height: 20,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: isOwner
-                                ? const Color(0xFFDDF4EA)
-                                : const Color(0xFFECEEF0),
-                            borderRadius: BorderRadius.circular(999),
+                    if (_status == BackupScreenStatus.familyOwnerOnly)
+                      Container(
+                        height: 20,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE3ECFD),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'Family',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2F6FED),
                           ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            isOwner ? 'Owner' : 'Member',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                        ),
+                      )
+                    else
+                      ValueListenableBuilder<DemoRole>(
+                        valueListenable: DemoSession.role,
+                        builder: (context, role, _) {
+                          final isOwner = role == DemoRole.owner;
+                          return Container(
+                            height: 20,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
                               color: isOwner
-                                  ? const Color(0xFF0E9F6E)
-                                  : const Color(0xFF7A8594),
+                                  ? const Color(0xFFDDF4EA)
+                                  : const Color(0xFFECEEF0),
+                              borderRadius: BorderRadius.circular(999),
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              isOwner ? 'Owner' : 'Member',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: isOwner
+                                    ? const Color(0xFF0E9F6E)
+                                    : const Color(0xFF7A8594),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -232,7 +256,12 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             Expanded(
               child: SingleChildScrollView(
                 physics: const ClampingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  4,
+                  16,
+                  _status == BackupScreenStatus.familyOwnerOnly ? 0 : 24,
+                ),
                 child: _buildContent(),
               ),
             ),
@@ -252,10 +281,81 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         return _buildFailedContent();
       case BackupScreenStatus.driveAccountUnavailable:
         return _buildDriveAccountUnavailableContent();
+      case BackupScreenStatus.familyOwnerOnly:
+        return _buildFamilyOwnerOnlyContent();
       case BackupScreenStatus.connected:
       default:
         return _buildConnectedContent();
     }
+  }
+
+  Widget _buildFamilyOwnerOnlyContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+          child: Column(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFDDF4EA),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: SvgPicture.asset(
+                  AppAssets.iconLock,
+                  width: 34,
+                  height: 34,
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFF0E9F6E),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Only the Owner can manage backups',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F1714),
+                  height: 24 / 17,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Ask the Owner to back up or restore home data.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF55625D),
+                  height: 20 / 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 456),
+        Center(
+          child: Container(
+            width: 112,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F1714),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+      ],
+    );
   }
 
   Widget _buildDriveAccountUnavailableContent() {
