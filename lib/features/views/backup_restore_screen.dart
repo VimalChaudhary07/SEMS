@@ -266,7 +266,11 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                         _status == BackupScreenStatus.restore2Validating ||
                         _status == BackupScreenStatus.restore3Review ||
                         _status == BackupScreenStatus.restore4Restoring ||
-                        _status == BackupScreenStatus.restore5Done)
+                        _status == BackupScreenStatus.restore5Done ||
+                        _status == BackupScreenStatus.restoreErrorNoBackup ||
+                        _status == BackupScreenStatus.restoreErrorSchemaMismatch ||
+                        _status == BackupScreenStatus.restoreErrorChecksumFailed ||
+                        _status == BackupScreenStatus.restoreErrorGoogleAccountUnavailable)
                     ? 0
                     : 24,
               ),
@@ -363,6 +367,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         return _buildRestore4RestoringContent();
       case BackupScreenStatus.restore5Done:
         return _buildRestore5DoneContent();
+      case BackupScreenStatus.restoreErrorNoBackup:
+        return _buildRestoreErrorNoBackupContent();
       case BackupScreenStatus.manualBackupSheet:
       case BackupScreenStatus.verifyResultSheet:
       case BackupScreenStatus.connected:
@@ -2569,6 +2575,10 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
       case BackupScreenStatus.restore4Restoring:
         return 'Step 4 of 4';
       case BackupScreenStatus.restore5Done:
+      case BackupScreenStatus.restoreErrorNoBackup:
+      case BackupScreenStatus.restoreErrorSchemaMismatch:
+      case BackupScreenStatus.restoreErrorChecksumFailed:
+      case BackupScreenStatus.restoreErrorGoogleAccountUnavailable:
         return null;
       case BackupScreenStatus.notConnected:
       case BackupScreenStatus.googleAccountChooser:
@@ -3504,6 +3514,135 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           ),
         ),
         const SizedBox(height: 299),
+        Center(
+          child: Container(
+            width: 112,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F1714),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+      ],
+    );
+  }
+
+  Widget _buildRestoreErrorNoBackupContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 32, 8, 0),
+          child: Column(
+            children: [
+              // 80x80 hero circle #FBE6E6 with 34x34 AppAssets.iconAlert (#D64545)
+              Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFBE6E6),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: SvgPicture.asset(
+                  AppAssets.iconAlert,
+                  width: 34,
+                  height: 34,
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFFD64545),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+              const Text(
+                'No SEMS backup found',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F1714),
+                  height: 28 / 22,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'There is no SEMS folder in this Google account.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF55625D),
+                  height: 22 / 14,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _status = BackupScreenStatus.googleAccountChooser;
+                      });
+                    },
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0E9F6E),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        'Try another account',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _status = BackupScreenStatus.notConnected;
+                      });
+                    },
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFE1E9E5),
+                          width: 1,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        'Start fresh',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0F1714),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 416),
         Center(
           child: Container(
             width: 112,
