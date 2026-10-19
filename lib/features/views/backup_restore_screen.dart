@@ -51,11 +51,21 @@ class BackupRestoreScreen extends StatefulWidget {
     this.status = BackupScreenStatus.notConnected,
     this.bottomNavigationBar,
     this.onBack,
+    this.onConnectDrive,
+    this.onBackupNow,
+    this.onVerify,
+    this.onRestore,
+    this.onDisconnectDrive,
   });
 
   final BackupScreenStatus status;
   final Widget? bottomNavigationBar;
   final VoidCallback? onBack;
+  final VoidCallback? onConnectDrive;
+  final VoidCallback? onBackupNow;
+  final VoidCallback? onVerify;
+  final VoidCallback? onRestore;
+  final VoidCallback? onDisconnectDrive;
 
   @override
   State<BackupRestoreScreen> createState() => _BackupRestoreScreenState();
@@ -63,6 +73,9 @@ class BackupRestoreScreen extends StatefulWidget {
 
 class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
   late BackupScreenStatus _status;
+  bool _dailyBackup = true;
+  bool _weeklyCheckpoint = true;
+  bool _backupOnChanges = true;
 
   @override
   void initState() {
@@ -216,23 +229,676 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
               child: SingleChildScrollView(
                 physics: const ClampingScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildHeroCard(),
-                    const SizedBox(height: 16),
-                    _buildWarningBanner(),
-                    const SizedBox(height: 16),
-                    _buildWhatIsBackedUpSection(),
-                    const SizedBox(height: 16),
-                    _buildRestoreButton(),
-                  ],
-                ),
+                child: _buildContent(),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildContent() {
+    switch (_status) {
+      case BackupScreenStatus.notConnected:
+        return _buildNotConnectedContent();
+      case BackupScreenStatus.connected:
+      default:
+        return _buildConnectedContent();
+    }
+  }
+
+  Widget _buildNotConnectedContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildHeroCard(),
+        const SizedBox(height: 16),
+        _buildWarningBanner(),
+        const SizedBox(height: 16),
+        _buildWhatIsBackedUpSection(),
+        const SizedBox(height: 16),
+        _buildRestoreButton(),
+      ],
+    );
+  }
+
+  Widget _buildConnectedContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildDriveStatusCard(),
+        const SizedBox(height: 16),
+        _buildScheduleSection(),
+        const SizedBox(height: 16),
+        _buildBackupContentsSection(),
+        const SizedBox(height: 16),
+        _buildRestoreFromBackupButton(),
+        const SizedBox(height: 16),
+        _buildDisconnectDriveButton(),
+        const SizedBox(height: 16),
+        _buildFooterInfoNote(),
+        const SizedBox(height: 14),
+        Center(
+          child: Container(
+            width: 112,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F1714),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+      ],
+    );
+  }
+
+  Widget _buildDriveStatusCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE1E9E5)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(16, 22, 20, 0.05),
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+          BoxShadow(
+            color: Color.fromRGBO(16, 22, 20, 0.05),
+            blurRadius: 14,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2F1E8),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: SvgPicture.asset(
+                  AppAssets.iconCloud,
+                  width: 22,
+                  height: 22,
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFF2E9E5B),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Text(
+                      'Google Drive',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F1714),
+                        height: 1.33,
+                      ),
+                    ),
+                    Text(
+                      'asha.verma@gmail.com',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF55625D),
+                        height: 1.33,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                height: 24,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2F1E8),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SvgPicture.asset(
+                      AppAssets.iconCheck,
+                      width: 13,
+                      height: 13,
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFF2E9E5B),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'Connected',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF2E9E5B),
+                        height: 1.33,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Last synced',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF55625D),
+                        height: 1.33,
+                      ),
+                    ),
+                    Text(
+                      '2 h ago',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F1714),
+                        height: 1.43,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Pending uploads',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF55625D),
+                        height: 1.33,
+                      ),
+                    ),
+                    Text(
+                      '14 batches',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2F6FED),
+                        height: 1.43,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: widget.onBackupNow ?? () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0E9F6E),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset(
+                          AppAssets.iconUpload,
+                          width: 18,
+                          height: 18,
+                          colorFilter: const ColorFilter.mode(
+                            Colors.white,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Back up now',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 104,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: widget.onVerify ?? () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEAF1EE),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                  ),
+                  child: const Text(
+                    'Verify',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F1714),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduleSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            'SCHEDULE',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.06 * 13,
+              color: Color(0xFF55625D),
+              height: 1.38,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE1E9E5)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color.fromRGBO(16, 22, 20, 0.05),
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+              BoxShadow(
+                color: Color.fromRGBO(16, 22, 20, 0.05),
+                blurRadius: 14,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildScheduleRow(
+                icon: AppAssets.iconClock,
+                title: 'Daily backup',
+                subtitle: 'Uploads new readings overnight',
+                value: _dailyBackup,
+                onChanged: (v) => setState(() => _dailyBackup = v),
+              ),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+              _buildScheduleRow(
+                icon: AppAssets.iconCalendar,
+                title: 'Weekly checkpoint',
+                subtitle: 'Sunday, consolidated archive',
+                value: _weeklyCheckpoint,
+                onChanged: (v) => setState(() => _weeklyCheckpoint = v),
+              ),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+              _buildScheduleRow(
+                icon: AppAssets.iconRefresh,
+                title: 'Backup on changes',
+                subtitle: 'Schedules, tariff and bills',
+                value: _backupOnChanges,
+                onChanged: (v) => setState(() => _backupOnChanges = v),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScheduleRow({
+    required String icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return SizedBox(
+      height: 58,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF1EE),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: SvgPicture.asset(
+                icon,
+                width: 19,
+                height: 19,
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFF0F1714),
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF0F1714),
+                      height: 1.33,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF55625D),
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            _FigmaToggle(value: value, onChanged: onChanged),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackupContentsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            'BACKUP CONTENTS',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.06 * 13,
+              color: Color(0xFF55625D),
+              height: 1.38,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE1E9E5)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color.fromRGBO(16, 22, 20, 0.05),
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+              BoxShadow(
+                color: Color.fromRGBO(16, 22, 20, 0.05),
+                blurRadius: 14,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildContentRow(
+                icon: AppAssets.iconLayers,
+                title: 'Appliances and sessions',
+                count: '3 + 1 archived',
+              ),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+              _buildContentRow(
+                icon: AppAssets.iconChart,
+                title: 'Readings archive',
+                count: '1.2 MB',
+              ),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+              _buildContentRow(
+                icon: AppAssets.iconReceipt,
+                title: 'Bills and tariff',
+                count: '3 bills',
+              ),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+              _buildContentRow(
+                icon: AppAssets.iconSparkle,
+                title: 'AI reports',
+                count: '2',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContentRow({
+    required String icon,
+    required String title,
+    required String count,
+  }) {
+    return SizedBox(
+      height: 56,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF1EE),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: SvgPicture.asset(
+                icon,
+                width: 19,
+                height: 19,
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFF0F1714),
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF0F1714),
+                  height: 1.33,
+                ),
+              ),
+            ),
+            Text(
+              count,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF55625D),
+                height: 1.38,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRestoreFromBackupButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton(
+        onPressed: widget.onRestore ?? () {},
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: Color(0xFFE1E9E5)),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              AppAssets.iconDownload,
+              width: 18,
+              height: 18,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF0F1714),
+                BlendMode.srcIn,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Restore from backup',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF0F1714),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDisconnectDriveButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: TextButton(
+        onPressed: widget.onDisconnectDrive ?? () {},
+        style: TextButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+        ),
+        child: const Text(
+          'Disconnect Drive',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFFD64545),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooterInfoNote() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: SvgPicture.asset(
+            AppAssets.iconInfo,
+            width: 14,
+            height: 14,
+            colorFilter: const ColorFilter.mode(
+              Color(0xFF55625D),
+              BlendMode.srcIn,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text(
+            'The folder is a normal Drive folder, so it survives uninstall. You can see it in Google Drive.',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF55625D),
+              height: 1.33,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -305,7 +971,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: widget.onConnectDrive ?? () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0E9F6E),
                 elevation: 0,
@@ -518,7 +1184,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
       width: double.infinity,
       height: 48,
       child: OutlinedButton(
-        onPressed: () {},
+        onPressed: widget.onRestore ?? () {},
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: Color(0xFFE1E9E5)),
           elevation: 0,
@@ -533,6 +1199,45 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             fontSize: 15,
             fontWeight: FontWeight.w600,
             color: Color(0xFF0F1714),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FigmaToggle extends StatelessWidget {
+  const _FigmaToggle({required this.value, required this.onChanged});
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        width: 46,
+        height: 28,
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: value ? const Color(0xFF0E9F6E) : const Color(0xFFD9DEDC),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: const [
+              BoxShadow(
+                color: Color.fromRGBO(16, 22, 20, 0.15),
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+            ],
           ),
         ),
       ),
