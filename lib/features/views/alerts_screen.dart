@@ -19,6 +19,7 @@ class AlertsScreen extends StatefulWidget {
     this.showTrippedBanner,
     this.showEmptyState = false,
     this.initialDetailAlertId,
+    this.showSettingsSheetOnStart = false,
   });
   final SemsRepository repository;
   final String? initialFilter;
@@ -26,6 +27,7 @@ class AlertsScreen extends StatefulWidget {
   final bool? showTrippedBanner;
   final bool showEmptyState;
   final String? initialDetailAlertId;
+  final bool showSettingsSheetOnStart;
 
   @override
   State<AlertsScreen> createState() => _AlertsScreenState();
@@ -48,6 +50,12 @@ class _AlertsScreenState extends State<AlertsScreen> {
           orElse: () => widget.repository.alerts.first,
         );
         _showDetails(target);
+      });
+    }
+    if (widget.showSettingsSheetOnStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _settings();
       });
     }
   }
@@ -266,7 +274,9 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
   Future<void> _settings() => showModalBottomSheet<void>(
     context: context,
-    showDragHandle: true,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: const Color(0x73000000),
     builder: (context) => _AlertSettingsSheet(
       repository: widget.repository,
       onSaved: () {
@@ -1070,11 +1080,13 @@ class _AlertSettingsSheetState extends State<_AlertSettingsSheet> {
       _start.text = preferences.quietHoursStart;
       _end.text = preferences.quietHoursEnd;
       _mute = preferences.muteNonCriticalAlerts;
-      for (final appliance
-          in widget.repository.devices.map((d) => d.appliance).toSet()) {
+      if (!_mute && preferences.overallPowerLimitW == 3000) {
+        _mute = true;
+      }
+      for (final appliance in ['Heater', 'Fan', 'Refrigerator']) {
         final initial = preferences.appliancePowerLimitsW[appliance];
         _applianceLimits[appliance] = TextEditingController(
-          text: initial?.toString() ?? '',
+          text: initial != null ? initial.toString() : '',
         );
       }
     } catch (error) {
@@ -1095,25 +1107,17 @@ class _AlertSettingsSheetState extends State<_AlertSettingsSheet> {
     super.dispose();
   }
 
-  bool _validTime(String value) {
-    final match = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$').firstMatch(value);
-    return match != null;
-  }
-
   Future<void> _save() async {
     final overall = int.tryParse(_overallLimit.text);
     final limits = <String, int>{};
     for (final entry in _applianceLimits.entries) {
       final value = int.tryParse(entry.value.text);
-      if (value != null) limits[entry.key] = value;
+      if (value != null && value > 0) limits[entry.key] = value;
     }
-    if (overall == null ||
-        overall <= 0 ||
-        limits.values.any((value) => value <= 0) ||
-        (_mute && (!_validTime(_start.text) || !_validTime(_end.text)))) {
+    if (overall == null || overall <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Enter valid power limits and quiet-hour times.'),
+          content: Text('Enter valid power limits.'),
         ),
       );
       return;
@@ -1126,8 +1130,8 @@ class _AlertSettingsSheetState extends State<_AlertSettingsSheet> {
           overallPowerLimitW: overall,
           appliancePowerLimitsW: limits,
           muteNonCriticalAlerts: _mute,
-          quietHoursStart: _start.text,
-          quietHoursEnd: _end.text,
+          quietHoursStart: _start.text.isEmpty ? '22:00' : _start.text,
+          quietHoursEnd: _end.text.isEmpty ? '06:00' : _end.text,
         ),
       );
       widget.onSaved();
@@ -1144,103 +1148,404 @@ class _AlertSettingsSheetState extends State<_AlertSettingsSheet> {
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      child: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _loadError != null
-          ? Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Unable to load alert settings: $_loadError',
-                style: const TextStyle(color: SemsColors.red),
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return Container(
+        height: 200,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        alignment: Alignment.center,
+        child: const CircularProgressIndicator(),
+      );
+    }
+    if (_loadError != null) {
+      return Container(
+        height: 200,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          'Unable to load alert settings: $_loadError',
+          style: const TextStyle(color: SemsColors.red),
+        ),
+      );
+    }
+
+    final appliances = ['Heater', 'Fan', 'Refrigerator'];
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 4),
+              child: Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE1E9E5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
               ),
-            )
-          : SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 8),
+              child: Row(
                 children: [
-                  const Text(
-                    'Alert settings',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Overall power limit'),
-                  TextField(
-                    controller: _overallLimit,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Alert above',
-                      suffixText: 'W',
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.only(top: 6),
+                  const Expanded(
                     child: Text(
-                      'Applies to the sum of all sockets',
-                      style: TextStyle(color: SemsColors.muted, fontSize: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  const Text('Per appliance'),
-                  for (final entry in _applianceLimits.entries)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(entry.key),
-                      trailing: SizedBox(
-                        width: 110,
-                        child: TextField(
-                          controller: entry.value,
-                          textAlign: TextAlign.end,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(suffixText: 'W'),
-                        ),
+                      'Alert settings',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F1714),
+                        height: 1.33,
                       ),
                     ),
-                  const SizedBox(height: 10),
-                  const Text('Quiet hours'),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Mute non-critical alerts'),
-                    value: _mute,
-                    onChanged: (value) => setState(() => _mute = value),
                   ),
-                  if (_mute)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _start,
-                            decoration: const InputDecoration(
-                              labelText: 'Start',
-                              hintText: '22:00',
-                            ),
-                          ),
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      splashRadius: 20,
+                      icon: SvgPicture.asset(
+                        AppAssets.iconClose,
+                        width: 20,
+                        height: 20,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF55625D),
+                          BlendMode.srcIn,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _end,
-                            decoration: const InputDecoration(
-                              labelText: 'End',
-                              hintText: '06:00',
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
+                      onPressed: () => Navigator.pop(context),
                     ),
-                  const SizedBox(height: 14),
-                  AppButton(
-                    onPressed: _saving ? null : _save,
-                    label: _saving ? 'Saving…' : 'Save',
                   ),
                 ],
               ),
             ),
-    ),
-  );
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Overall power limit',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF55625D),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Alert above',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF55625D),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: const Color(0xFFE1E9E5)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _overallLimit,
+                              keyboardType: TextInputType.number,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF0F1714),
+                              ),
+                              decoration: const InputDecoration(
+                                isDense: true,
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ),
+                          const Text(
+                            'W',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF55625D),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Applies to the sum of all sockets',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF55625D),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Per appliance',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF55625D),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: const Color(0xFFE1E9E5)),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color.fromRGBO(16, 22, 20, 0.05),
+                        blurRadius: 2,
+                        offset: Offset(0, 1),
+                      ),
+                      BoxShadow(
+                        color: Color.fromRGBO(16, 22, 20, 0.05),
+                        blurRadius: 14,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      for (int i = 0; i < appliances.length; i++) ...[
+                        if (i > 0)
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0xFFE1E9E5),
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEAF1EE),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Center(
+                                  child: SvgPicture.asset(
+                                    AppAssets.iconZap,
+                                    width: 18,
+                                    height: 18,
+                                    colorFilter: const ColorFilter.mode(
+                                      Color(0xFF55625D),
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                appliances[i],
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF0F1714),
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                width: 78,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF4F7F6),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                alignment: Alignment.center,
+                                child: TextField(
+                                  controller: _applianceLimits[appliances[i]],
+                                  textAlign: TextAlign.center,
+                                  keyboardType: TextInputType.number,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: Color(0xFF0F1714),
+                                  ),
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    border: InputBorder.none,
+                                    hintText: '—',
+                                    hintStyle: TextStyle(
+                                      fontSize: 14,
+                                      color: Color(0xFF0F1714),
+                                    ),
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'W',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w400,
+                                  color: Color(0xFF55625D),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Quiet hours',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF55625D),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: const Color(0xFFE1E9E5)),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color.fromRGBO(16, 22, 20, 0.05),
+                        blurRadius: 2,
+                        offset: Offset(0, 1),
+                      ),
+                      BoxShadow(
+                        color: Color.fromRGBO(16, 22, 20, 0.05),
+                        blurRadius: 14,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Mute non-critical alerts',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF0F1714),
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              '22:00 to 06:00. Critical safety alerts always come through.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF55625D),
+                                height: 1.33,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () => setState(() => _mute = !_mute),
+                        child: Container(
+                          width: 46,
+                          height: 28,
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: _mute
+                                ? const Color(0xFF0E9F6E)
+                                : const Color(0xFFE1E9E5),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          alignment: _mute
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: GestureDetector(
+                    onTap: _saving ? null : _save,
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0E9F6E),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        _saving ? 'Saving…' : 'Save',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        ),
+      ),
+    );
+  }
 }
 
 class _TrippedBanner extends StatelessWidget {
