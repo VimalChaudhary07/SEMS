@@ -1086,6 +1086,7 @@ class ScheduleEditorScreen extends StatefulWidget {
     this.initialApplianceId,
     this.initialIntervals,
     this.initialDays,
+    this.initialDate,
   });
 
   final SemsRepository repository;
@@ -1097,6 +1098,7 @@ class ScheduleEditorScreen extends StatefulWidget {
   final String? initialApplianceId;
   final List<ScheduleInterval>? initialIntervals;
   final List<String>? initialDays;
+  final DateTime? initialDate;
 
   @override
   State<ScheduleEditorScreen> createState() => _ScheduleEditorScreenState();
@@ -1168,9 +1170,10 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
             : existing.days.toSet());
     _enabled = existing?.enabled ?? true;
     _resumeAtNextInterval = existing?.manualOverride != 'stayOverridden';
-    _date = existing?.scheduledDate == null
-        ? DateTime.now().add(const Duration(days: 1))
-        : DateTime.tryParse(existing!.scheduledDate!);
+    _date = widget.initialDate ??
+        (existing?.scheduledDate == null
+            ? DateTime.now().add(const Duration(days: 1))
+            : DateTime.tryParse(existing!.scheduledDate!));
     final savedIntervals =
         existing?.intervals ?? widget.initialIntervals ?? const <ScheduleInterval>[];
     _intervals = [
@@ -1625,7 +1628,7 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                     ],
                     if (_kind == 'oneTime') ...[
                       const SizedBox(height: 20),
-                      _sectionLabel('Scheduled date'),
+                      _sectionLabel('Date'),
                       const SizedBox(height: 8),
                       InkWell(
                         onTap: _pickDate,
@@ -1645,18 +1648,18 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                                 width: 18,
                                 height: 18,
                                 colorFilter: const ColorFilter.mode(
-                                  Color(0xFF0E9F6E),
+                                  Color(0xFF55625D),
                                   BlendMode.srcIn,
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Date · ${_formatDate(_date!)}',
+                                _formatDate(_date!),
                                 style: const TextStyle(
                                   fontFamily: AppText.family,
                                   fontSize: 15,
                                   height: 20 / 15,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w400,
                                   color: Color(0xFF0F1714),
                                 ),
                               ),
@@ -1972,10 +1975,9 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                       ],
                     ],
                     // Section 6: Manual switch override (Node 17:394)
-                    if (_kind != 'oneTime') ...[
-                      const SizedBox(height: 20),
-                      _sectionLabel('If you switch it manually'),
-                      const SizedBox(height: 8),
+                    const SizedBox(height: 20),
+                    _sectionLabel('If you switch it manually'),
+                    const SizedBox(height: 8),
                       // Option 1: Resume at next interval
                       InkWell(
                         onTap: () =>
@@ -2137,7 +2139,6 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                           ),
                         ),
                       ),
-                    ],
                     // Section 7: Enabled Card (Node 17:400)
                     const SizedBox(height: 20),
                     Container(
