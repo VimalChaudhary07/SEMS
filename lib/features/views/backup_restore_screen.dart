@@ -260,7 +260,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                 4,
                 16,
                 (_status == BackupScreenStatus.familyOwnerOnly ||
-                        _status == BackupScreenStatus.restore1FindBackup)
+                        _status == BackupScreenStatus.restore1FindBackup ||
+                        _status == BackupScreenStatus.restore2Validating)
                     ? 0
                     : 24,
               ),
@@ -333,6 +334,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         return _buildFamilyOwnerOnlyContent();
       case BackupScreenStatus.restore1FindBackup:
         return _buildRestore1FindBackupContent();
+      case BackupScreenStatus.restore2Validating:
+        return _buildRestore2ValidatingContent();
       case BackupScreenStatus.manualBackupSheet:
       case BackupScreenStatus.verifyResultSheet:
       case BackupScreenStatus.connected:
@@ -2777,6 +2780,142 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           const SizedBox(height: 6),
         ],
       ),
+    );
+  }
+
+  Widget _buildRestore2ValidatingContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 4-step progress bar (height 4px + 20px bottom spacing)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0E9F6E),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0E9F6E),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE1E9E5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE1E9E5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Hero block
+        Padding(
+          padding: const EdgeInsets.only(top: 32),
+          child: Column(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE3ECFD),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: SvgPicture.asset(
+                  AppAssets.iconRefresh,
+                  width: 34,
+                  height: 34,
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFF2F6FED),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Validating backup',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F1714),
+                  height: 28 / 22,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Checking schema version and checksums…',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF55625D),
+                  height: 20 / 14,
+                ),
+              ),
+              const SizedBox(height: 28),
+              Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF1EE),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  width: 90,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2F6FED),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 500),
+        Center(
+          child: Container(
+            width: 112,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F1714),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+      ],
     );
   }
 }
