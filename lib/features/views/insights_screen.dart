@@ -435,10 +435,10 @@ class _DataCoverageCard extends StatelessWidget {
       subtitle = 'Anomaly checks are on. Forecasts unlock at 7 days.';
     } else {
       label = '$days days · Collecting';
-      badgeBg = const Color(0xFFE5EDF5);
-      badgeText = const Color(0xFF4B6B94);
-      progress = 0.08;
-      progressColor = const Color(0xFFD97706);
+      badgeBg = const Color(0xFFECEEF0);
+      badgeText = const Color(0xFF7A8594);
+      progress = 14.49 / 326;
+      progressColor = const Color(0xFFD98A00);
       subtitle = 'Unlocks anomaly checks after 3 days and forecasts after 7 days.';
     }
 
@@ -1865,17 +1865,18 @@ class _LearningStateCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           const Text(
             'Learning your usage pattern',
             style: TextStyle(
               fontFamily: 'Inter',
-              fontSize: 18,
+              fontSize: 17,
               fontWeight: FontWeight.w600,
               color: Color(0xFF0F1714),
+              height: 1.29,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           const Text(
             '5 more days of data recommended',
             style: TextStyle(
@@ -1883,9 +1884,10 @@ class _LearningStateCard extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w400,
               color: Color(0xFF55625D),
+              height: 1.38,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Container(
             height: 8,
             width: double.infinity,
@@ -1895,7 +1897,7 @@ class _LearningStateCard extends StatelessWidget {
             ),
             alignment: Alignment.centerLeft,
             child: FractionallySizedBox(
-              widthFactor: 2 / 7,
+              widthFactor: 93.14 / 326,
               child: Container(
                 height: 8,
                 decoration: BoxDecoration(
@@ -1910,9 +1912,10 @@ class _LearningStateCard extends StatelessWidget {
             '2 of 7 days',
             style: TextStyle(
               fontFamily: 'Inter',
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w400,
               color: Color(0xFF55625D),
+              height: 1.27,
             ),
           ),
         ],
@@ -1930,7 +1933,7 @@ class _MeasuredSoFarCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1958,9 +1961,10 @@ class _MeasuredSoFarCard extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: Color(0xFF0F1714),
+              height: 1.38,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
@@ -2003,7 +2007,7 @@ class _MeasuredSoFarCard extends StatelessWidget {
                             style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 12,
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.w500,
                               color: Color(0xFF55625D),
                             ),
                           ),
@@ -2054,7 +2058,7 @@ class _MeasuredSoFarCard extends StatelessWidget {
                             style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 12,
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.w500,
                               color: Color(0xFF55625D),
                             ),
                           ),
