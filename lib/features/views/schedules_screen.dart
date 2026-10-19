@@ -1087,6 +1087,7 @@ class ScheduleEditorScreen extends StatefulWidget {
     this.initialIntervals,
     this.initialDays,
     this.initialDate,
+    this.initialClockSynced,
   });
 
   final SemsRepository repository;
@@ -1099,6 +1100,7 @@ class ScheduleEditorScreen extends StatefulWidget {
   final List<ScheduleInterval>? initialIntervals;
   final List<String>? initialDays;
   final DateTime? initialDate;
+  final bool? initialClockSynced;
 
   @override
   State<ScheduleEditorScreen> createState() => _ScheduleEditorScreenState();
@@ -1199,7 +1201,10 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
         ];
       }
     }
-    _refreshClockSync();
+    _clockSynced = widget.initialClockSynced ?? true;
+    if (widget.initialClockSynced == null) {
+      _refreshClockSync();
+    }
   }
 
   @override
@@ -1340,13 +1345,58 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                   children: [
                     if (!_clockSynced && !_checkingClock) ...[
-                      const AppBanner(
-                        tone: StatusTone.warn,
-                        title: 'Waiting for time sync',
-                        body:
-                            'This socket needs a valid clock before schedules can run.',
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE3ECFD),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF2F6FED)),
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SvgPicture.asset(
+                              AppAssets.iconClock,
+                              width: 19,
+                              height: 19,
+                              colorFilter: const ColorFilter.mode(
+                                Color(0xFF2F6FED),
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Waiting for time sync',
+                                    style: TextStyle(
+                                      fontFamily: AppText.family,
+                                      fontSize: 13,
+                                      height: 20 / 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF0F1714),
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'This socket needs a valid clock before it can run schedules. It syncs time when it next connects to Wi-Fi.',
+                                    style: TextStyle(
+                                      fontFamily: AppText.family,
+                                      fontSize: 12,
+                                      height: 18 / 12,
+                                      fontWeight: FontWeight.w400,
+                                      color: Color(0xFF55625D),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                     ],
                     // Section 1: Name Field (Node 17:327)
                     _sectionLabel('Name'),
