@@ -18,12 +18,14 @@ class AlertsScreen extends StatefulWidget {
     this.bottomNavigationBar,
     this.showTrippedBanner,
     this.showEmptyState = false,
+    this.initialDetailAlertId,
   });
   final SemsRepository repository;
   final String? initialFilter;
   final Widget? bottomNavigationBar;
   final bool? showTrippedBanner;
   final bool showEmptyState;
+  final String? initialDetailAlertId;
 
   @override
   State<AlertsScreen> createState() => _AlertsScreenState();
@@ -38,6 +40,16 @@ class _AlertsScreenState extends State<AlertsScreen> {
     super.initState();
     selected = widget.initialFilter ?? 'All';
     _preferences = widget.repository.getAlertPreferences();
+    if (widget.initialDetailAlertId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final target = widget.repository.alerts.firstWhere(
+          (a) => a.id == widget.initialDetailAlertId,
+          orElse: () => widget.repository.alerts.first,
+        );
+        _showDetails(target);
+      });
+    }
   }
 
   static const filters = [
@@ -243,35 +255,12 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
   Future<void> _showDetails(SemsAlert alert) => showModalBottomSheet<void>(
     context: context,
-    showDragHandle: true,
-    builder: (context) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(alert.title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(alert.device, style: const TextStyle(color: SemsColors.muted)),
-            const SizedBox(height: 14),
-            Text(alert.message, style: const TextStyle(height: 1.5)),
-            const SizedBox(height: 10),
-            Text(
-              alert.time,
-              style: const TextStyle(color: SemsColors.muted, fontSize: 11),
-            ),
-            const SizedBox(height: 18),
-            AppButton(
-              onPressed: () {
-                unawaited(_acknowledge(alert));
-                Navigator.pop(context);
-              },
-              label: alert.acknowledged ? 'Acknowledged' : 'Acknowledge',
-            ),
-          ],
-        ),
-      ),
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: const Color(0x73000000),
+    builder: (context) => _AlertDetailSheet(
+      alert: alert,
+      onAcknowledge: () => _acknowledge(alert),
     ),
   );
 
@@ -285,6 +274,457 @@ class _AlertsScreenState extends State<AlertsScreen> {
       },
     ),
   );
+}
+
+class _AlertDetailSheet extends StatelessWidget {
+  const _AlertDetailSheet({
+    required this.alert,
+    this.onAcknowledge,
+  });
+
+  final SemsAlert alert;
+  final VoidCallback? onAcknowledge;
+
+  static String _filterFor(SemsAlert alert) => switch (alert.category) {
+        AlertCategory.electrical => 'Electrical',
+        AlertCategory.energy => 'Energy',
+        AlertCategory.connectivity => 'Connectivity',
+        AlertCategory.schedule => 'Automation',
+        AlertCategory.ai => 'AI',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 4),
+              child: Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE1E9E5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      alert.title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F1714),
+                        height: 1.33,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      splashRadius: 20,
+                      icon: SvgPicture.asset(
+                        AppAssets.iconClose,
+                        width: 20,
+                        height: 20,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF55625D),
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (alert.category == AlertCategory.ai) ...[
+                      Container(
+                        height: 24,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFBE6E6),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SvgPicture.asset(
+                              AppAssets.iconAlert,
+                              width: 13,
+                              height: 13,
+                              colorFilter: const ColorFilter.mode(
+                                Color(0xFFD64545),
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              alert.badgeLabel ?? 'HIGH',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFFD64545),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        height: 24,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECE6FB),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SvgPicture.asset(
+                              AppAssets.iconSparkle,
+                              width: 13,
+                              height: 13,
+                              colorFilter: const ColorFilter.mode(
+                                Color(0xFF7E3AF2),
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'Estimated',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF7E3AF2),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        height: 24,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEAF1EE),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'AI',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF55625D),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      if (alert.severity == AlertSeverity.critical)
+                        Container(
+                          height: 24,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFBE6E6),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SvgPicture.asset(
+                                AppAssets.iconAlert,
+                                width: 13,
+                                height: 13,
+                                colorFilter: const ColorFilter.mode(
+                                  Color(0xFFD64545),
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                alert.badgeLabel ?? 'Critical',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFFD64545),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (alert.severity == AlertSeverity.warning)
+                        Container(
+                          height: 24,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFCF0D9),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SvgPicture.asset(
+                                AppAssets.iconAlert,
+                                width: 13,
+                                height: 13,
+                                colorFilter: const ColorFilter.mode(
+                                  Color(0xFFD98A00),
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                alert.badgeLabel ?? 'Warning',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFFD98A00),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      Container(
+                        height: 24,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEAF1EE),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _filterFor(alert),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF55625D),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  alert.device,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF55625D),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF1EE),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Occurred at',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF55625D),
+                            ),
+                          ),
+                          Text(
+                            alert.occurredAt ?? alert.time,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF0F1714),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Received at',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF55625D),
+                            ),
+                          ),
+                          Text(
+                            alert.receivedAt ?? alert.time,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF0F1714),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (alert.seenNote != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    alert.seenNote!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF55625D),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                const Text(
+                  'What happened',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  alert.whatHappened ?? alert.message,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF55625D),
+                    height: 1.43,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'What to do next',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  alert.whatToDoNext ??
+                      alert.nextAction ??
+                      'The socket recovered by itself after 60 s. If it trips again, unplug extra loads from this circuit.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF0F1714),
+                    height: 1.43,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Column(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                          onAcknowledge?.call();
+                        },
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0E9F6E),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SvgPicture.asset(
+                                AppAssets.iconCheck,
+                                width: 18,
+                                height: 18,
+                                colorFilter: const ColorFilter.mode(
+                                  Colors.white,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                alert.acknowledged
+                                    ? 'Acknowledged'
+                                    : 'Acknowledge',
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: const Color(0xFFE1E9E5)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            alert.secondaryActionLabel ?? 'Open device',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF0F1714),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _AlertCard extends StatelessWidget {

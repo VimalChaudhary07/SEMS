@@ -173,6 +173,11 @@ class SemsAlert {
     this.nextAction,
     this.seenNote,
     this.badgeLabel,
+    this.whatHappened,
+    this.whatToDoNext,
+    this.occurredAt,
+    this.receivedAt,
+    this.secondaryActionLabel,
     this.acknowledged = false,
   });
   final String id;
@@ -186,6 +191,11 @@ class SemsAlert {
   final String? nextAction;
   final String? seenNote;
   final String? badgeLabel;
+  final String? whatHappened;
+  final String? whatToDoNext;
+  final String? occurredAt;
+  final String? receivedAt;
+  final String? secondaryActionLabel;
   final bool acknowledged;
 }
 

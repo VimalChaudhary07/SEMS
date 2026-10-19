@@ -125,15 +125,13 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('3 need attention'), findsOneWidget);
-    expect(find.text('Heater usage is higher than usual'), findsNothing);
+    expect(find.text('Possible abnormal behaviour'), findsNothing);
     await tester.ensureVisible(find.text('AI'));
     await tester.tap(find.text('AI'));
     await tester.pumpAndSettle();
-    expect(find.text('Heater usage is higher than usual'), findsOneWidget);
+    expect(find.text('Possible abnormal behaviour'), findsOneWidget);
     expect(
-      find.text(
-        'AI alerts are estimates based on local sample history; they are informational, not electrical faults.',
-      ),
+      find.text('Estimated, calculated on your phone'),
       findsOneWidget,
     );
     await tester.tap(find.byTooltip('Alert settings'));

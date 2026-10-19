@@ -427,6 +427,11 @@ class MockSemsRepository implements SemsRepository {
       title: 'Over-current at SEMS-000001',
       message: 'Current reached 16.4 A, above the 16 A safety limit. The socket switched the heater OFF to protect the wiring.',
       time: 'Today 18:15',
+      occurredAt: 'Today 18:15',
+      receivedAt: 'Today 18:15',
+      whatHappened: 'Current reached 16.4 A, above the 16 A safety limit. The socket switched the heater OFF to protect the wiring.',
+      whatToDoNext: 'The socket recovered by itself after 60 s. If it trips again, unplug extra loads from this circuit.',
+      secondaryActionLabel: 'Open device',
       severity: AlertSeverity.critical,
       category: AlertCategory.electrical,
       device: 'Living room · Heater',
@@ -468,12 +473,19 @@ class MockSemsRepository implements SemsRepository {
           'Heater is drawing 2,200 W, 47% higher than your normal pattern (usual 1,500 W). Estimated from your last 45 days of use.',
       nextAction:
           'Please check the appliance. Make sure nothing is blocking it and it was not left running on purpose.',
+      whatHappened:
+          'Heater is drawing 2,200 W, 47% higher than your normal pattern (usual 1,500 W). Estimated from your last 45 days of use.',
+      whatToDoNext:
+          'Please check the appliance. Make sure nothing is blocking it and it was not left running on purpose.',
       time: 'Today 18:34',
+      occurredAt: 'Today 15:34',
+      receivedAt: 'Today 18:34',
       severity: AlertSeverity.critical,
       category: AlertCategory.ai,
       device: 'Living room · Heater',
       seenNote: 'Seen 4 times, last 18:34',
       badgeLabel: 'HIGH',
+      secondaryActionLabel: 'Check Appliance',
     ),
     const SemsAlert(
       id: 'alert-ai-2',
