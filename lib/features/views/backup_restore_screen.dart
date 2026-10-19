@@ -57,6 +57,7 @@ class BackupRestoreScreen extends StatefulWidget {
     this.onRestore,
     this.onDisconnectDrive,
     this.onRetryNow,
+    this.onReconnect,
   });
 
   final BackupScreenStatus status;
@@ -68,6 +69,7 @@ class BackupRestoreScreen extends StatefulWidget {
   final VoidCallback? onRestore;
   final VoidCallback? onDisconnectDrive;
   final VoidCallback? onRetryNow;
+  final VoidCallback? onReconnect;
 
   @override
   State<BackupRestoreScreen> createState() => _BackupRestoreScreenState();
@@ -248,10 +250,116 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         return _buildSyncingContent();
       case BackupScreenStatus.failed:
         return _buildFailedContent();
+      case BackupScreenStatus.driveAccountUnavailable:
+        return _buildDriveAccountUnavailableContent();
       case BackupScreenStatus.connected:
       default:
         return _buildConnectedContent();
     }
+  }
+
+  Widget _buildDriveAccountUnavailableContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildDriveAccountUnavailableBanner(),
+        const SizedBox(height: 16),
+        _buildDriveStatusCard(isDisconnected: true),
+        const SizedBox(height: 16),
+        _buildScheduleSection(),
+        const SizedBox(height: 16),
+        _buildBackupContentsSection(),
+        const SizedBox(height: 16),
+        _buildRestoreFromBackupButton(),
+        const SizedBox(height: 16),
+        _buildDisconnectDriveButton(),
+        const SizedBox(height: 16),
+        _buildFooterInfoNote(),
+        const SizedBox(height: 14),
+        Center(
+          child: Container(
+            width: 112,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F1714),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+      ],
+    );
+  }
+
+  Widget _buildDriveAccountUnavailableBanner() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFCF0D9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD98A00)),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: SvgPicture.asset(
+              AppAssets.iconAlert,
+              width: 19,
+              height: 19,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFFD98A00),
+                BlendMode.srcIn,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Google account unavailable',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                    height: 1.54,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Sign in to Drive again to resume backups. Drive recovery depends on this account.',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF55625D),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                GestureDetector(
+                  onTap: widget.onReconnect ?? () {},
+                  child: const Text(
+                    'Reconnect',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFD98A00),
+                      height: 1.38,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildFailedContent() {
@@ -497,6 +605,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
 
   Widget _buildDriveStatusCard({
     bool isSyncing = false,
+    bool isDisconnected = false,
     String lastSynced = '2 h ago',
   }) {
     return Container(
@@ -527,16 +636,22 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE2F1E8),
+                  color: isDisconnected
+                      ? const Color(0xFFFCF0D9)
+                      : const Color(0xFFE2F1E8),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
                 child: SvgPicture.asset(
-                  AppAssets.iconCloud,
+                  isDisconnected
+                      ? AppAssets.iconCloudOff
+                      : AppAssets.iconCloud,
                   width: 22,
                   height: 22,
-                  colorFilter: const ColorFilter.mode(
-                    Color(0xFF2E9E5B),
+                  colorFilter: ColorFilter.mode(
+                    isDisconnected
+                        ? const Color(0xFFD98A00)
+                        : const Color(0xFF2E9E5B),
                     BlendMode.srcIn,
                   ),
                 ),
@@ -574,7 +689,9 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                 height: 24,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE2F1E8),
+                  color: isDisconnected
+                      ? const Color(0xFFFCF0D9)
+                      : const Color(0xFFE2F1E8),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 alignment: Alignment.center,
@@ -582,22 +699,28 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SvgPicture.asset(
-                      AppAssets.iconCheck,
+                      isDisconnected
+                          ? AppAssets.iconWifiOff
+                          : AppAssets.iconCheck,
                       width: 13,
                       height: 13,
-                      colorFilter: const ColorFilter.mode(
-                        Color(0xFF2E9E5B),
+                      colorFilter: ColorFilter.mode(
+                        isDisconnected
+                            ? const Color(0xFFD98A00)
+                            : const Color(0xFF2E9E5B),
                         BlendMode.srcIn,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Text(
-                      'Connected',
+                    Text(
+                      isDisconnected ? 'Disconnected' : 'Connected',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF2E9E5B),
+                        color: isDisconnected
+                            ? const Color(0xFFD98A00)
+                            : const Color(0xFF2E9E5B),
                         height: 1.33,
                       ),
                     ),

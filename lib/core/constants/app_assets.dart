@@ -35,6 +35,7 @@ abstract final class AppAssets {
   static const iconFridge = 'assets/figma/icons/fridge.svg';
   static const iconPower = 'assets/figma/icons/power.svg';
   static const iconCloud = 'assets/figma/icons/cloud.svg';
+  static const iconCloudOff = 'assets/figma/icons/cloud_off.svg';
   static const iconUpload = 'assets/figma/icons/upload.svg';
   static const iconHome = 'assets/figma/icons/home.svg';
   static const iconPlug = 'assets/figma/icons/plug.svg';
