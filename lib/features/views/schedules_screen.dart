@@ -1085,6 +1085,7 @@ class ScheduleEditorScreen extends StatefulWidget {
     this.initialName,
     this.initialApplianceId,
     this.initialIntervals,
+    this.initialDays,
   });
 
   final SemsRepository repository;
@@ -1095,6 +1096,7 @@ class ScheduleEditorScreen extends StatefulWidget {
   final String? initialName;
   final String? initialApplianceId;
   final List<ScheduleInterval>? initialIntervals;
+  final List<String>? initialDays;
 
   @override
   State<ScheduleEditorScreen> createState() => _ScheduleEditorScreenState();
@@ -1158,9 +1160,12 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
             .where((item) => !item.archived && item.socketId != null)
             .firstOrNull
             ?.id;
-    _selectedDays = existing == null
-        ? {'monday', 'tuesday', 'wednesday', 'thursday', 'friday'}
-        : existing.days.toSet();
+    _selectedDays = widget.initialDays?.toSet() ??
+        (existing == null
+            ? (_kind == 'overnight'
+                ? _dayValues.toSet()
+                : {'monday', 'tuesday', 'wednesday', 'thursday', 'friday'})
+            : existing.days.toSet());
     _enabled = existing?.enabled ?? true;
     _resumeAtNextInterval = existing?.manualOverride != 'stayOverridden';
     _date = existing?.scheduledDate == null
@@ -1177,6 +1182,10 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
         _intervals = [
           const _EditableInterval('06:00', '08:00'),
           const _EditableInterval('18:00', '22:00'),
+        ];
+      } else if (_kind == 'overnight') {
+        _intervals = [
+          const _EditableInterval('23:00', '06:00'),
         ];
       } else {
         _intervals = [
@@ -1488,6 +1497,15 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                                   const _EditableInterval('06:00', '08:00'),
                                   const _EditableInterval('18:00', '22:00'),
                                 ];
+                              } else if (_kind == 'overnight') {
+                                if (_intervals.length != 1 ||
+                                    (_intervals.first.start == '18:00' &&
+                                        _intervals.first.end == '22:00')) {
+                                  _intervals = [
+                                    const _EditableInterval('23:00', '06:00'),
+                                  ];
+                                }
+                                _selectedDays = _dayValues.toSet();
                               }
                             }),
                             borderRadius: BorderRadius.circular(999),
@@ -1662,39 +1680,36 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                     // Section 5: Time intervals (Node 17:381)
                     if (_kind != 'countdown') ...[
                       const SizedBox(height: 20),
-                      _sectionLabel(
-                        _kind == 'overnight'
-                            ? 'ON from, OFF next day'
-                            : 'ON from, OFF at',
-                      ),
+                      _sectionLabel('ON from, OFF at'),
                       const SizedBox(height: 10),
                       for (var index = 0;
                           index < _intervals.length;
                           index++) ...[
                         if (index > 0) const SizedBox(height: 10),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE1E9E5)),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color.fromRGBO(16, 22, 20, 0.05),
-                                blurRadius: 2,
-                                offset: Offset(0, 1),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border:
+                                    Border.all(color: const Color(0xFFE1E9E5)),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color.fromRGBO(16, 22, 20, 0.05),
+                                    blurRadius: 2,
+                                    offset: Offset(0, 1),
+                                  ),
+                                  BoxShadow(
+                                    color: Color.fromRGBO(16, 22, 20, 0.05),
+                                    blurRadius: 14,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                              BoxShadow(
-                                color: Color.fromRGBO(16, 22, 20, 0.05),
-                                blurRadius: 14,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
                                 children: [
                                   Expanded(
                                     child: InkWell(
@@ -1792,14 +1807,20 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                                   ],
                                 ],
                               ),
-                              if (_kind == 'overnight') ...[
-                                const SizedBox(height: 8),
-                                Row(
+                            ),
+                            if (_kind == 'overnight' ||
+                                _minutes(_intervals[index].end) <
+                                    _minutes(_intervals[index].start)) ...[
+                              const SizedBox(height: 6),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                                child: Row(
                                   children: [
                                     SvgPicture.asset(
-                                      AppAssets.iconAlert,
-                                      width: 14,
-                                      height: 14,
+                                      AppAssets.iconMoonOvernight,
+                                      width: 13,
+                                      height: 13,
                                       colorFilter: const ColorFilter.mode(
                                         Color(0xFFD98A00),
                                         BlendMode.srcIn,
@@ -1818,9 +1839,9 @@ class _ScheduleEditorScreenState extends State<_ScheduleEditorScreen> {
                                     ),
                                   ],
                                 ),
-                              ],
+                              ),
                             ],
-                          ),
+                          ],
                         ),
                       ],
                       if (_multiple) ...[

@@ -60,6 +60,7 @@ abstract final class AppAssets {
   static const iconReceipt = 'assets/figma/icons/receipt.svg';
   static const iconUser = 'assets/figma/icons/user.svg';
   static const iconMoon = 'assets/figma/icons/moon.svg';
+  static const iconMoonOvernight = 'assets/figma/icons/moon_overnight.svg';
   static const iconLogout = 'assets/figma/icons/logout.svg';
   static const iconMail = 'assets/figma/icons/mail.svg';
   static const iconLock = 'assets/figma/icons/lock.svg';
