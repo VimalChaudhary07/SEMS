@@ -1,424 +1,541 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../core/constants/app_assets.dart';
 import '../../core/session/demo_session.dart';
-import '../../core/theme/app_theme.dart';
-import '../../shared/widgets/sems_widgets.dart';
+
+/// Implements Figma Module 11: Google Drive backup and restore
+/// Screen 122: Backup - not connected (Node ID: 22:146)
+/// Screen 123: Backup - connected (Node ID: 22:314)
+/// Screen 124: Backup - syncing (Node ID: 22:469)
+/// Screen 125: Backup - failed (Node ID: 22:622)
+/// Screen 126: Backup - Drive account unavailable (Node ID: 22:791)
+/// Screen 127: Backup - Family (Owner only) (Node ID: 22:822)
+/// Screen 128: Backup - Google account chooser (Node ID: 22:931)
+/// Screen 129: Backup - manual backup sheet (Node ID: 22:1128)
+/// Screen 130: Backup - verify result sheet (Node ID: 22:1305)
+/// Screen 131: Restore 1 - Find backup (Node ID: 22:1402)
+/// Screen 132: Restore 2 - Validating (Node ID: 22:1446)
+/// Screen 133: Restore 3 - Review (Node ID: 22:1526)
+/// Screen 134: Restore 4 - Restoring (Node ID: 22:1568)
+/// Screen 135: Restore 5 - Done (Node ID: 22:1608)
+/// Screen 136: Restore error - no backup found (Node ID: 22:1647)
+/// Screen 137: Restore error - schema mismatch (Node ID: 22:1680)
+/// Screen 138: Restore error - checksum failed (Node ID: 22:1715)
+/// Screen 139: Restore error - Google account unavailable (Node ID: 22:1748)
+
+enum BackupScreenStatus {
+  notConnected,
+  connected,
+  syncing,
+  failed,
+  driveAccountUnavailable,
+  familyOwnerOnly,
+  googleAccountChooser,
+  manualBackupSheet,
+  verifyResultSheet,
+  restore1FindBackup,
+  restore2Validating,
+  restore3Review,
+  restore4Restoring,
+  restore5Done,
+  restoreErrorNoBackup,
+  restoreErrorSchemaMismatch,
+  restoreErrorChecksumFailed,
+  restoreErrorGoogleAccountUnavailable,
+}
 
 class BackupRestoreScreen extends StatefulWidget {
-  const BackupRestoreScreen({super.key});
+  const BackupRestoreScreen({
+    super.key,
+    this.status = BackupScreenStatus.notConnected,
+    this.bottomNavigationBar,
+    this.onBack,
+  });
+
+  final BackupScreenStatus status;
+  final Widget? bottomNavigationBar;
+  final VoidCallback? onBack;
+
   @override
   State<BackupRestoreScreen> createState() => _BackupRestoreScreenState();
 }
 
 class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
-  bool connected = false, backupExists = false, verified = false, busy = false;
-  String? error;
-  int restoreStep = -1;
-  static const restoreSteps = [
-    'Find backup',
-    'Validate backup',
-    'Review restore',
-    'Restore data',
-    'Done',
-  ];
+  late BackupScreenStatus _status;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Backup and restore')),
-    body: ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const PageHeading(
-          title: 'Your data, your choice',
-          subtitle: 'Local backup preview',
-        ),
-        const SizedBox(height: 14),
-        AppCard(
-          child: Row(
-            children: [
-              Icon(
-                connected
-                    ? Icons.cloud_done_outlined
-                    : Icons.cloud_off_outlined,
-                color: SemsColors.forest,
-                size: 28,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      connected
-                          ? 'Drive connected · demo account'
-                          : 'Drive not connected',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    Text(
-                      connected
-                          ? 'Example account · preview only'
-                          : 'No cloud service is contacted',
-                      style: const TextStyle(
-                        color: SemsColors.muted,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              TextButton(
-                onPressed: DemoSession.isMember ? null : _connect,
-                child: Text(connected ? 'Manage' : 'Connect'),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Backup status',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                busy
-                    ? 'Preparing a local preview…'
-                    : backupExists
-                    ? 'Last backup · just now'
-                    : 'No backup created yet',
-                style: const TextStyle(color: SemsColors.muted, fontSize: 12),
-              ),
-              if (busy)
-                const Padding(
-                  padding: EdgeInsets.only(top: 10),
-                  child: LinearProgressIndicator(),
-                ),
-              if (backupExists) ...[
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Icon(
-                      verified
-                          ? Icons.verified_outlined
-                          : Icons.info_outline_rounded,
-                      size: 17,
-                      color: verified ? SemsColors.green : SemsColors.amber,
-                    ),
-                    const SizedBox(width: 7),
-                    Text(
-                      verified ? 'Backup verified' : 'Not verified yet',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: SemsColors.muted,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        AppButton(
-          onPressed: busy || DemoSession.isMember ? null : _backup,
-          leadingIcon: Icons.backup_outlined,
-          label: connected ? 'Back up now' : 'Create local demo backup',
-        ),
-        const SizedBox(height: 8),
-        AppButton(
-          variant: AppButtonVariant.secondary,
-          onPressed: !backupExists || busy || DemoSession.isMember
-              ? null
-              : _verify,
-          leadingIcon: Icons.fact_check_outlined,
-          label: 'Verify backup',
-        ),
-        const SizedBox(height: 8),
-        AppButton(
-          variant: AppButtonVariant.secondary,
-          onPressed: busy || DemoSession.isMember ? null : _startRestore,
-          leadingIcon: Icons.restore_rounded,
-          label: 'Restore from backup',
-        ),
-        if (error != null) ...[
-          const SizedBox(height: 12),
-          _ErrorBanner(
-            title: error!,
-            onRetry: () => setState(() {
-              error = null;
-              restoreStep = -1;
-            }),
-          ),
-        ],
-        if (restoreStep >= 0) ...[
-          const SizedBox(height: 16),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  restoreSteps[restoreStep],
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 17,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                AppProgressBar(
-                  value: (restoreStep + 1) / restoreSteps.length,
-                  height: 6,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _restoreDescription(),
-                  style: const TextStyle(
-                    color: SemsColors.muted,
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                AppButton(
-                  onPressed: _advanceRestore,
-                  label: restoreStep == restoreSteps.length - 1
-                      ? 'Done'
-                      : restoreStep == 2
-                      ? 'Review and continue'
-                      : 'Continue',
-                ),
-              ],
-            ),
-          ),
-        ],
-        const SizedBox(height: 14),
-        TextButton.icon(
-          onPressed: _previewErrors,
-          icon: const Icon(Icons.bug_report_outlined, size: 17),
-          label: const Text('Preview restore error states'),
-        ),
-        const SizedBox(height: 6),
-        const AppCard(
-          child: Text(
-            'This screen simulates Google Drive backup/restore states. No Google account, backup file, or cloud operation is used.',
-            style: TextStyle(
-              color: SemsColors.muted,
-              fontSize: 12,
-              height: 1.4,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  String _restoreDescription() => switch (restoreStep) {
-    0 => 'Looking for the most recent sample backup.',
-    1 => 'Checking the sample backup format and checksum.',
-    2 => 'Review the sample data that would be restored.',
-    3 => 'Restoring sample preferences in this screen only.',
-    _ => 'Restore preview finished. No device or cloud data was changed.',
-  };
-
-  Future<void> _connect() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Connect Google Drive?'),
-        content: const Text(
-          'This preview will simulate a connection. It will not open Google sign-in or access Drive.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          AppButton(
-            fullWidth: false,
-            onPressed: () => Navigator.pop(context, true),
-            label: 'Continue with demo',
-          ),
-        ],
-      ),
-    );
-    if (ok == true && mounted) setState(() => connected = !connected);
+  void initState() {
+    super.initState();
+    _status = widget.status;
   }
 
-  Future<void> _backup() async {
-    final include = await showModalBottomSheet<bool>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => _ManualBackupSheet(),
-    );
-    if (include != true || !mounted) return;
-    setState(() {
-      busy = true;
-      error = null;
-    });
-    await Future<void>.delayed(const Duration(milliseconds: 700));
-    if (!mounted) return;
-    setState(() {
-      busy = false;
-      backupExists = true;
-      verified = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Sample backup prepared for this preview.')),
-    );
-  }
-
-  Future<void> _verify() async {
-    setState(() => busy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 650));
-    if (!mounted) return;
-    setState(() {
-      busy = false;
-      verified = true;
-    });
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => const SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.verified_rounded, color: SemsColors.green, size: 42),
-              SizedBox(height: 10),
-              Text(
-                'Backup verified',
-                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
-              ),
-              SizedBox(height: 6),
-              Text(
-                'This sample backup passed the local preview check.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: SemsColors.muted),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _startRestore() {
-    setState(() {
-      if (!backupExists) {
-        error = 'No backup found';
-      } else {
-        error = null;
-        restoreStep = 0;
-      }
-    });
-  }
-
-  void _advanceRestore() {
-    if (restoreStep == restoreSteps.length - 1) {
-      setState(() => restoreStep = -1);
-      return;
-    }
-    if (restoreStep == 1 && !verified) {
-      setState(() => error = 'Verify the backup before restoring it.');
-      return;
-    }
-    setState(() => restoreStep++);
-  }
-
-  Future<void> _previewErrors() async {
-    const errors = [
-      'No backup found',
-      'Schema mismatch',
-      'Checksum failed',
-      'Google account unavailable',
-    ];
-    final result = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F7F6),
+      bottomNavigationBar: widget.bottomNavigationBar,
+      body: SafeArea(
+        child: Column(
           children: [
-            const ListTile(title: Text('Choose a restore error state')),
-            for (final value in errors)
-              ListTile(
-                title: Text(value),
-                onTap: () => Navigator.pop(context, value),
+            // Status bar (24px)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SizedBox(
+                height: 24,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '09:41',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F1714),
+                      ),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SvgPicture.asset(
+                          AppAssets.iconWifi,
+                          width: 12,
+                          height: 12,
+                          colorFilter: const ColorFilter.mode(
+                            Color(0xFF0F1714),
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          '100%',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0F1714),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+            ),
+
+            // Top bar (56px)
+            Padding(
+              padding: const EdgeInsets.only(left: 8, right: 16),
+              child: SizedBox(
+                height: 56,
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: widget.onBack ?? () => Navigator.of(context).maybePop(),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        alignment: Alignment.center,
+                        child: SvgPicture.asset(
+                          AppAssets.iconChevLeft,
+                          width: 24,
+                          height: 24,
+                          colorFilter: const ColorFilter.mode(
+                            Color(0xFF0F1714),
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Backup',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF0F1714),
+                              height: 1.2,
+                            ),
+                          ),
+                          Text(
+                            _status == BackupScreenStatus.notConnected
+                                ? 'Not connected'
+                                : 'Google Drive',
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF55625D),
+                              height: 1.33,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ValueListenableBuilder<DemoRole>(
+                      valueListenable: DemoSession.role,
+                      builder: (context, role, _) {
+                        final isOwner = role == DemoRole.owner;
+                        return Container(
+                          height: 20,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: isOwner
+                                ? const Color(0xFFDDF4EA)
+                                : const Color(0xFFECEEF0),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            isOwner ? 'Owner' : 'Member',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isOwner
+                                  ? const Color(0xFF0E9F6E)
+                                  : const Color(0xFF7A8594),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildHeroCard(),
+                    const SizedBox(height: 16),
+                    _buildWarningBanner(),
+                    const SizedBox(height: 16),
+                    _buildWhatIsBackedUpSection(),
+                    const SizedBox(height: 16),
+                    _buildRestoreButton(),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
-    if (result != null && mounted) {
-      setState(() {
-        error = result;
-        restoreStep = -1;
-      });
-    }
   }
-}
 
-class _ManualBackupSheet extends StatefulWidget {
-  @override
-  State<_ManualBackupSheet> createState() => _ManualBackupSheetState();
-}
-
-class _ManualBackupSheetState extends State<_ManualBackupSheet> {
-  bool settings = true, schedules = true, history = true;
-  @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Manual backup',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-            ),
+  Widget _buildHeroCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE1E9E5)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(16, 22, 20, 0.05),
+            blurRadius: 2,
+            offset: Offset(0, 1),
           ),
-          SwitchListTile(
-            title: const Text('Settings and preferences'),
-            value: settings,
-            onChanged: (v) => setState(() => settings = v),
-          ),
-          SwitchListTile(
-            title: const Text('Schedules'),
-            value: schedules,
-            onChanged: (v) => setState(() => schedules = v),
-          ),
-          SwitchListTile(
-            title: const Text('Energy history'),
-            value: history,
-            onChanged: (v) => setState(() => history = v),
-          ),
-          AppButton(
-            onPressed: () =>
-                Navigator.pop(context, settings || schedules || history),
-            label: 'Create backup',
+          BoxShadow(
+            color: Color.fromRGBO(16, 22, 20, 0.05),
+            blurRadius: 14,
+            offset: Offset(0, 4),
           ),
         ],
       ),
-    ),
-  );
-}
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      child: Column(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: const BoxDecoration(
+              color: Color(0xFFDDF4EA),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: SvgPicture.asset(
+              AppAssets.iconCloud,
+              width: 34,
+              height: 34,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF0E9F6E),
+                BlendMode.srcIn,
+              ),
+            ),
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'Back up to your Google Drive',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF0F1714),
+              height: 1.41,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Keep your history safe if you reinstall the app\nor change phones. It lives in a normal\nfolder in your own Drive.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF55625D),
+              height: 1.43,
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0E9F6E),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    AppAssets.iconCloud,
+                    width: 18,
+                    height: 18,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.white,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Connect Google Drive',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.title, required this.onRetry});
-  final String title;
-  final VoidCallback onRetry;
-  @override
-  Widget build(BuildContext context) => AppBanner(
-    tone: StatusTone.fault,
-    icon: Icons.error_outline_rounded,
-    title: title,
-    actionText: 'Retry',
-    onAction: onRetry,
-  );
+  Widget _buildWarningBanner() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFCF0D9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD98A00)),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: SvgPicture.asset(
+              AppAssets.iconAlert,
+              width: 19,
+              height: 19,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFFD98A00),
+                BlendMode.srcIn,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Your history is only on this phone',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                    height: 1.54,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Uninstalling SEMS removes local history\nthat has not been backed up.',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF55625D),
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWhatIsBackedUpSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            'WHAT IS BACKED UP',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.06 * 13,
+              color: Color(0xFF55625D),
+              height: 1.38,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE1E9E5)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color.fromRGBO(16, 22, 20, 0.05),
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+              BoxShadow(
+                color: Color.fromRGBO(16, 22, 20, 0.05),
+                blurRadius: 14,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildFeatureRow('Appliances and sessions', AppAssets.iconLayers),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+              _buildFeatureRow('Daily and monthly usage', AppAssets.iconChart),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+              _buildFeatureRow('Schedules', AppAssets.iconCalendar),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+              _buildFeatureRow('Bills and tariff', AppAssets.iconReceipt),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+              _buildFeatureRow('Alerts', AppAssets.iconBell),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE1E9E5)),
+              _buildFeatureRow('AI reports', AppAssets.iconSparkle),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeatureRow(String title, String iconAsset) {
+    return SizedBox(
+      height: 56,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF1EE),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: SvgPicture.asset(
+                iconAsset,
+                width: 19,
+                height: 19,
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFF0F1714),
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF0F1714),
+                  height: 1.33,
+                ),
+              ),
+            ),
+            SvgPicture.asset(
+              AppAssets.iconCheck,
+              width: 16,
+              height: 16,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF0E9F6E),
+                BlendMode.srcIn,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRestoreButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton(
+        onPressed: () {},
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: Color(0xFFE1E9E5)),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: const Text(
+          'Restore from a backup',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF0F1714),
+          ),
+        ),
+      ),
+    );
+  }
 }
