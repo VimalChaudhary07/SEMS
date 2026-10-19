@@ -269,61 +269,158 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Future<void> _export() async {
+    final colors = ComponentTheme.colors(context);
     final type = await showModalBottomSheet<String>(
       context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const ListTile(
-                title: Text(
-                  'Export history',
-                  style: TextStyle(
-                    fontFamily: AppText.family,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Exports the chart above: $selectedAppliance, $range.',
-                    style: TextStyle(
-                      fontFamily: AppText.family,
-                      color: ComponentTheme.colors(context).textSecondary,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: const Color(0x73000000),
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: colors.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 4),
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE1E9E5),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              for (final format in [
-                'CSV',
-                'Excel-compatible CSV',
-                'JSON',
-                'PDF',
-              ])
-                ListTile(
-                  leading: const Icon(Icons.download_outlined),
-                  title: Text(
-                    format,
-                    style: const TextStyle(fontFamily: AppText.family),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Export history',
+                        style: TextStyle(
+                          fontFamily: AppText.family,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          splashRadius: 20,
+                          icon: SvgPicture.asset(
+                            AppAssets.iconClose,
+                            width: 20,
+                            height: 20,
+                            colorFilter: ColorFilter.mode(
+                              colors.textSecondary,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                    ],
                   ),
-                  subtitle: Text(
-                    switch (format) {
-                      'CSV' => 'Plain spreadsheet file',
-                      'Excel-compatible CSV' => 'Spreadsheet-compatible text',
-                      'JSON' => 'For developers and backups',
-                      _ => 'Printable summary report',
-                    },
-                    style: const TextStyle(fontFamily: AppText.family),
-                  ),
-                  onTap: () => Navigator.pop(context, format),
                 ),
-              const SizedBox(height: 12),
-            ],
+                Text(
+                  'Exports the chart above: $selectedAppliance, $range.',
+                  style: TextStyle(
+                    fontFamily: AppText.family,
+                    fontSize: 14,
+                    height: 20 / 14,
+                    fontWeight: FontWeight.w400,
+                    color: colors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: colors.card,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE1E9E5)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x0D101614),
+                        blurRadius: 2,
+                        offset: Offset(0, 1),
+                      ),
+                      BoxShadow(
+                        color: Color(0x0D101614),
+                        blurRadius: 14,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      _buildExportOption(
+                        context,
+                        title: 'CSV',
+                        subtitle: 'Plain spreadsheet file',
+                        iconAsset: AppAssets.iconFile,
+                        format: 'CSV',
+                        colors: colors,
+                        isFirst: true,
+                      ),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Color(0xFFE1E9E5),
+                      ),
+                      _buildExportOption(
+                        context,
+                        title: 'Excel-compatible CSV',
+                        subtitle: 'Excel-compatible CSV',
+                        iconAsset: AppAssets.iconLayers,
+                        format: 'Excel-compatible CSV',
+                        colors: colors,
+                      ),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Color(0xFFE1E9E5),
+                      ),
+                      _buildExportOption(
+                        context,
+                        title: 'JSON',
+                        subtitle: 'For developers and backups',
+                        iconAsset: AppAssets.iconCopy,
+                        format: 'JSON',
+                        colors: colors,
+                      ),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Color(0xFFE1E9E5),
+                      ),
+                      _buildExportOption(
+                        context,
+                        title: 'PDF',
+                        subtitle: 'Printable summary report',
+                        iconAsset: AppAssets.iconReceipt,
+                        format: 'PDF',
+                        colors: colors,
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -347,6 +444,88 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         ),
       );
     }
+  }
+
+  Widget _buildExportOption(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required String iconAsset,
+    required String format,
+    required AppColors colors,
+    bool isFirst = false,
+    bool isLast = false,
+  }) {
+    return InkWell(
+      onTap: () => Navigator.pop(context, format),
+      borderRadius: BorderRadius.vertical(
+        top: isFirst ? const Radius.circular(12) : Radius.zero,
+        bottom: isLast ? const Radius.circular(12) : Radius.zero,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF1EE),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: SvgPicture.asset(
+                  iconAsset,
+                  width: 20,
+                  height: 20,
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFF55625D),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: AppText.family,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontFamily: AppText.family,
+                      fontSize: 12,
+                      height: 18 / 12,
+                      fontWeight: FontWeight.w400,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SvgPicture.asset(
+              AppAssets.iconDownload,
+              width: 20,
+              height: 20,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF55625D),
+                BlendMode.srcIn,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   String _historyJson(List<EnergyReading> readings) =>
