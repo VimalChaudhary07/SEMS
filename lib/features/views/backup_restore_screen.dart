@@ -369,6 +369,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         return _buildRestore5DoneContent();
       case BackupScreenStatus.restoreErrorNoBackup:
         return _buildRestoreErrorNoBackupContent();
+      case BackupScreenStatus.restoreErrorSchemaMismatch:
+        return _buildRestoreErrorSchemaMismatchContent();
       case BackupScreenStatus.manualBackupSheet:
       case BackupScreenStatus.verifyResultSheet:
       case BackupScreenStatus.connected:
@@ -3643,6 +3645,103 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           ),
         ),
         const SizedBox(height: 416),
+        Center(
+          child: Container(
+            width: 112,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F1714),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+      ],
+    );
+  }
+
+  Widget _buildRestoreErrorSchemaMismatchContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 32, 8, 0),
+          child: Column(
+            children: [
+              // 80x80 hero circle #FBE6E6 with 34x34 AppAssets.iconAlert (#D64545)
+              Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFBE6E6),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: SvgPicture.asset(
+                  AppAssets.iconAlert,
+                  width: 34,
+                  height: 34,
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFFD64545),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+              const Text(
+                'Backup is from a newer app version',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F1714),
+                  height: 28 / 22,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Update SEMS to restore this backup. Nothing was changed.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF55625D),
+                  height: 22 / 14,
+                ),
+              ),
+              const SizedBox(height: 32),
+              GestureDetector(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Checking for updates… App is up to date.'),
+                    ),
+                  );
+                },
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                        color: const Color(0xFF0E9F6E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'Check for updates',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 422),
         Center(
           child: Container(
             width: 112,
