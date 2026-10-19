@@ -81,6 +81,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
   bool _weeklyCheckpoint = true;
   bool _backupOnChanges = true;
   int _selectedManualBackupOption = 0;
+  int _selectedRestoreConflictOption = 0;
 
   @override
   void initState() {
@@ -261,7 +262,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                 16,
                 (_status == BackupScreenStatus.familyOwnerOnly ||
                         _status == BackupScreenStatus.restore1FindBackup ||
-                        _status == BackupScreenStatus.restore2Validating)
+                        _status == BackupScreenStatus.restore2Validating ||
+                        _status == BackupScreenStatus.restore3Review)
                     ? 0
                     : 24,
               ),
@@ -269,7 +271,23 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             ),
           ),
           if (_status == BackupScreenStatus.restore1FindBackup)
-            _buildRestore1Footer(),
+            _buildRestoreFooter(
+              label: 'Search Drive for SEMS backup',
+              onTap: () {
+                setState(() {
+                  _status = BackupScreenStatus.restore2Validating;
+                });
+              },
+            ),
+          if (_status == BackupScreenStatus.restore3Review)
+            _buildRestoreFooter(
+              label: 'Restore',
+              onTap: () {
+                setState(() {
+                  _status = BackupScreenStatus.restore4Restoring;
+                });
+              },
+            ),
         ],
       ),
     );
@@ -336,6 +354,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         return _buildRestore1FindBackupContent();
       case BackupScreenStatus.restore2Validating:
         return _buildRestore2ValidatingContent();
+      case BackupScreenStatus.restore3Review:
+        return _buildRestore3ReviewContent();
       case BackupScreenStatus.manualBackupSheet:
       case BackupScreenStatus.verifyResultSheet:
       case BackupScreenStatus.connected:
@@ -2726,7 +2746,10 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
     );
   }
 
-  Widget _buildRestore1Footer() {
+  Widget _buildRestoreFooter({
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFFF4F7F6),
@@ -2743,11 +2766,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           GestureDetector(
-            onTap: () {
-              setState(() {
-                _status = BackupScreenStatus.restore2Validating;
-              });
-            },
+            onTap: onTap,
             child: Container(
               height: 48,
               decoration: BoxDecoration(
@@ -2755,9 +2774,9 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
-              child: const Text(
-                'Search Drive for SEMS backup',
-                style: TextStyle(
+              child: Text(
+                label,
+                style: const TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -2779,6 +2798,314 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           ),
           const SizedBox(height: 6),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRestore3ReviewContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 4-step progress bar (height 4px + 20px bottom spacing)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0E9F6E),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0E9F6E),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0E9F6E),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE1E9E5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Title: Backup found (22 Bold, #0F1714)
+        const Text(
+          'Backup found',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF0F1714),
+            height: 28 / 22,
+          ),
+        ),
+        const SizedBox(height: 4),
+
+        // Subtitle: Saved 11 Oct 2026, 06:00 · schema v1 · all checksums valid. (14 Regular, #55625D)
+        const Text(
+          'Saved 11 Oct 2026, 06:00 · schema v1 · all checksums valid.',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF55625D),
+            height: 20 / 14,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Group Card: 5 rows
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE1E9E5)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color.fromRGBO(16, 22, 20, 0.05),
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+              BoxShadow(
+                color: Color.fromRGBO(16, 22, 20, 0.05),
+                blurRadius: 14,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildReviewRow(title: 'Appliances', trailing: '3 + 1 archived'),
+              Container(height: 1, color: const Color(0xFFE1E9E5)),
+              _buildReviewRow(title: 'Sessions', trailing: '8'),
+              Container(height: 1, color: const Color(0xFFE1E9E5)),
+              _buildReviewRow(title: 'Readings', trailing: '412,880'),
+              Container(height: 1, color: const Color(0xFFE1E9E5)),
+              _buildReviewRow(title: 'Schedules', trailing: '2'),
+              Container(height: 1, color: const Color(0xFFE1E9E5)),
+              _buildReviewRow(title: 'Bills', trailing: '3'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Warning banner
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFFCF0D9),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFD98A00)),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: SvgPicture.asset(
+                  AppAssets.iconAlert,
+                  width: 19,
+                  height: 19,
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFFD98A00),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '2 conflicts with data on this phone',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F1714),
+                        height: 20 / 13,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Heater and Evening heater already exist here.',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF55625D),
+                        height: 18 / 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Radio 1: Merge
+        _buildConflictRadioOption(
+          index: 0,
+          title: 'Merge',
+          subtitle: 'Keep newer items, add the rest',
+        ),
+        const SizedBox(height: 8),
+
+        // Radio 2: Import as new
+        _buildConflictRadioOption(
+          index: 1,
+          title: 'Import as new',
+          subtitle: 'Add everything as separate copies',
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildReviewRow({
+    required String title,
+    required String trailing,
+  }) {
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF0F1714),
+              height: 20 / 15,
+            ),
+          ),
+          Text(
+            trailing,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF0F1714),
+              height: 18 / 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConflictRadioOption({
+    required int index,
+    required String title,
+    required String subtitle,
+  }) {
+    final isSelected = _selectedRestoreConflictOption == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedRestoreConflictOption = index;
+        });
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFDDF4EA) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF0E9F6E)
+                : const Color(0xFFE1E9E5),
+          ),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFF0E9F6E)
+                      : const Color(0xFFE1E9E5),
+                  width: 2,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: isSelected
+                  ? Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF0E9F6E),
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF0F1714),
+                      height: 20 / 14,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF55625D),
+                      height: 18 / 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
