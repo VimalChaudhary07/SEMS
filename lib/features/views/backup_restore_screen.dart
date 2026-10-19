@@ -56,6 +56,7 @@ class BackupRestoreScreen extends StatefulWidget {
     this.onVerify,
     this.onRestore,
     this.onDisconnectDrive,
+    this.onRetryNow,
   });
 
   final BackupScreenStatus status;
@@ -66,6 +67,7 @@ class BackupRestoreScreen extends StatefulWidget {
   final VoidCallback? onVerify;
   final VoidCallback? onRestore;
   final VoidCallback? onDisconnectDrive;
+  final VoidCallback? onRetryNow;
 
   @override
   State<BackupRestoreScreen> createState() => _BackupRestoreScreenState();
@@ -244,10 +246,116 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         return _buildNotConnectedContent();
       case BackupScreenStatus.syncing:
         return _buildSyncingContent();
+      case BackupScreenStatus.failed:
+        return _buildFailedContent();
       case BackupScreenStatus.connected:
       default:
         return _buildConnectedContent();
     }
+  }
+
+  Widget _buildFailedContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildFailedBanner(),
+        const SizedBox(height: 16),
+        _buildDriveStatusCard(lastSynced: 'Yesterday 21:40'),
+        const SizedBox(height: 16),
+        _buildScheduleSection(),
+        const SizedBox(height: 16),
+        _buildBackupContentsSection(),
+        const SizedBox(height: 16),
+        _buildRestoreFromBackupButton(),
+        const SizedBox(height: 16),
+        _buildDisconnectDriveButton(),
+        const SizedBox(height: 16),
+        _buildFooterInfoNote(),
+        const SizedBox(height: 14),
+        Center(
+          child: Container(
+            width: 112,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F1714),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+      ],
+    );
+  }
+
+  Widget _buildFailedBanner() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFBE6E6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD64545)),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: SvgPicture.asset(
+              AppAssets.iconAlert,
+              width: 19,
+              height: 19,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFFD64545),
+                BlendMode.srcIn,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Last backup failed',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1714),
+                    height: 1.54,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Network lost while uploading. Retrying with backoff; your local copy is safe.',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF55625D),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                GestureDetector(
+                  onTap: widget.onRetryNow ?? () {},
+                  child: const Text(
+                    'Retry now',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFD64545),
+                      height: 1.38,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
 
@@ -387,7 +495,10 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
     );
   }
 
-  Widget _buildDriveStatusCard({bool isSyncing = false}) {
+  Widget _buildDriveStatusCard({
+    bool isSyncing = false,
+    String lastSynced = '2 h ago',
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -503,8 +614,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
+                  children: [
+                    const Text(
                       'Last synced',
                       style: TextStyle(
                         fontFamily: 'Inter',
@@ -515,8 +626,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
                       ),
                     ),
                     Text(
-                      '2 h ago',
-                      style: TextStyle(
+                      lastSynced,
+                      style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
